@@ -24,3 +24,5 @@ reports/*.csv
 # OS/editor
 .DS_Store
 .vscode/
+
+instructions.md
