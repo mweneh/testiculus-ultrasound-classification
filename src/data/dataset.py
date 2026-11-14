@@ -9,8 +9,6 @@ from torchvision import transforms
 
 
 class TesticulUSDataset(Dataset):
-    __test__ = False
-
     """
     PyTorch dataset for TesticulUS binary classification.
 
@@ -20,6 +18,8 @@ class TesticulUSDataset(Dataset):
 
     The dataset does not create train/validation/test splits.
     """
+
+    __test__ = False
 
     CLASS_TO_LABEL = {
         "homogeneous": 0,
