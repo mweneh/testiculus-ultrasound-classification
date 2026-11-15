@@ -22,6 +22,8 @@ artifacts/
 
 # Generated outputs
 reports/*.csv
+# Local review artifact containing reproductions of ultrasound images
+reports/similarity_contact_sheet.png
 
 # OS/editor
 .DS_Store
