@@ -43,4 +43,12 @@ Candidate pairs flagged: 22.
 - `homogeneous/791.png` ↔ `homogeneous/811.png` (dHash distance 4; labels 0/0; partitions train/train).
 - `homogeneous/856.png` ↔ `inhomogeneous/334.png` (dHash distance 4; labels 0/1; partitions test/train).
 
-Near-hash candidates were not automatically grouped because similarity does not establish same-patient identity. Human review is pending; review these candidates and update the grouping policy before training if the review identifies duplicates.
+## Human visual review
+
+All 22 flagged pairs were manually inspected in the contact sheet, including all 12 candidates whose images are assigned to different partitions. At the available contact-sheet resolution, no convincing cross-partition duplicate was identified.
+
+Pairs 13 (`homogeneous/476.png` ↔ `homogeneous/478.png`) and 14 (`homogeneous/477.png` ↔ `homogeneous/479.png`) appear to show near-identical underlying images with differences in measurement annotations. All four images are already assigned to the training partition.
+
+These are visual observations only. They do not confirm duplicate acquisitions, patient identity, or shared examination provenance. Similarity does not establish patient identity, and filenames are not used to infer it. No split assignments or manifests were changed following this review.
+
+Patient-independent and centre-held-out validation remain unverified because verified patient/examination and centre identifiers are unavailable. The provisional evaluation protocol remains image-level and may be subject to patient leakage.
