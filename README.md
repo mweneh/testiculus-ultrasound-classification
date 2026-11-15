@@ -85,6 +85,24 @@ arrays have conflicting class labels. Perceptual-hash candidates are reported
 for review and are not automatically grouped. Split manifests contain paths
 and labels, not medical image pixels.
 
+Check the existing manifests and render all flagged pairs without regenerating
+or modifying the manifests:
+
+```bash
+python -m src.data.similarity_review \
+  --data-dir data/raw \
+  --split-dir data/splits \
+  --audit reports/similarity_audit.md \
+  --output reports/similarity_contact_sheet.png \
+  --expected-total 860
+```
+
+The command verifies complete and unique manifest coverage, class labels,
+resolvable image paths, per-class split proportions (within 1.5 percentage
+points of the 70/15/15 targets), report counts, and recomputed perceptual-hash
+findings. It writes the contact sheet under `reports/`; image IDs in the sheet
+are filename stems, not patient identifiers.
+
 ## Setup
 
 Python 3.10 or later is recommended. Install dependencies in a virtual
