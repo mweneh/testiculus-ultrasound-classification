@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from threading import RLock
 
 import torch
 from PIL import Image
@@ -30,11 +31,12 @@ class CheckpointPredictor:
         )
         self.threshold = resolve_threshold(self.model_type, threshold_config=self.threshold_config)
         self.transform = get_transforms(self.model_type, training=False)
+        self._lock = RLock()
 
     def predict(self, image: Image.Image) -> dict:
         """Predict an image without discovering or opening any dataset partition."""
         tensor = self.transform(image.convert("L")).unsqueeze(0).to(self.device)
-        with torch.inference_mode():
+        with self._lock, torch.inference_mode():
             probability = float(torch.softmax(self.model(tensor), dim=1)[0, 1].item())
         if not 0 <= probability <= 1:
             raise ValueError("Model returned a non-finite positive-class probability")

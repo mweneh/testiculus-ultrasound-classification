@@ -8,3 +8,5 @@ torchvision
 pytest
 jupyterlab
 ipykernel
+-r requirements-api.txt
+httpx==0.28.1
