@@ -25,7 +25,8 @@ from torch.utils.data import DataLoader
 
 from src.data.dataset import TesticulUSDataset
 from src.data.transforms import get_transforms
-from src.training import load_checkpoint, select_device
+from src.threshold_config import DEFAULT_THRESHOLD_CONFIG, resolve_threshold
+from src.training import CLASS_TO_LABEL, load_checkpoint, select_device
 
 
 def calculate_metrics(labels, probabilities, threshold: float = 0.5,
@@ -197,16 +198,24 @@ def save_roc_pr_plots(labels, probabilities, output_dir: Path) -> tuple[Path, Pa
 
 def evaluate_checkpoint(checkpoint_path: Path, data_dir: Path,
                         manifest_path: Path, output_dir: Path,
-                        threshold: float = 0.5,
+                        threshold: float | None = None,
                         device: str | torch.device = "auto",
                         batch_size: int = 32,
-                        num_workers: int = 0) -> dict:
-    """Evaluate a selected checkpoint on one explicit manifest."""
+                        num_workers: int = 0,
+                        threshold_config: Path | None = None) -> dict:
+    """Evaluate one explicit manifest with the checkpoint's validation threshold.
+
+    An explicit numeric threshold remains available for baseline comparisons.
+    Resolve configuration errors before opening the evaluation manifest/images.
+    """
     if batch_size < 1 or num_workers < 0:
         raise ValueError("batch_size must be positive and num_workers nonnegative")
     target_device = select_device(device)
     model, checkpoint = load_checkpoint(checkpoint_path, device=target_device)
     model_type = checkpoint["model_type"]
+    if checkpoint.get("class_to_idx") != CLASS_TO_LABEL:
+        raise ValueError("Checkpoint class mapping must assign inhomogeneous to class 1")
+    selected_threshold = resolve_threshold(model_type, threshold, threshold_config)
     dataset = TesticulUSDataset(
         data_dir,
         manifest_path,
@@ -216,8 +225,8 @@ def evaluate_checkpoint(checkpoint_path: Path, data_dir: Path,
         dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers
     )
     labels, probabilities, image_paths = collect_predictions(model, loader, target_device)
-    metrics = calculate_metrics(labels, probabilities, threshold=threshold)
-    predictions = (probabilities >= threshold).astype(np.int64)
+    metrics = calculate_metrics(labels, probabilities, threshold=selected_threshold)
+    predictions = (probabilities >= selected_threshold).astype(np.int64)
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -238,7 +247,7 @@ def evaluate_checkpoint(checkpoint_path: Path, data_dir: Path,
                 "prediction": int(prediction),
                 "probability_class_0": float(1 - positive_probability),
                 "probability_class_1": float(positive_probability),
-                "threshold": float(threshold),
+                "threshold": selected_threshold,
             })
 
     save_roc_pr_plots(labels, probabilities, output_dir)
@@ -247,6 +256,11 @@ def evaluate_checkpoint(checkpoint_path: Path, data_dir: Path,
         "checkpoint": str(checkpoint_path),
         "manifest": str(manifest_path),
         "n_samples": int(len(labels)),
+        "threshold_source": "explicit_override" if threshold is not None else "validation_configuration",
+        "threshold_config": (
+            str(DEFAULT_THRESHOLD_CONFIG if threshold_config is None else threshold_config)
+            if threshold is None else None
+        ),
         "metrics": metrics,
     }
     (output_dir / "metrics.json").write_text(
@@ -261,12 +275,19 @@ def main() -> None:
     parser.add_argument("--data-dir", type=Path, default=Path("data/raw"))
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--threshold", type=float, default=0.5)
+    threshold_options = parser.add_mutually_exclusive_group()
+    threshold_options.add_argument(
+        "--threshold", type=float, help="Explicit override for baseline comparisons"
+    )
+    threshold_options.add_argument(
+        "--threshold-config", type=Path,
+        help="Validation threshold record (defaults to reports/validation_thresholds.json)",
+    )
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--num-workers", type=int, default=0)
     parser.add_argument("--device", default="auto")
     args = parser.parse_args()
-    if not 0 <= args.threshold <= 1:
+    if args.threshold is not None and not 0 <= args.threshold <= 1:
         parser.error("threshold must be in [0, 1]")
     result = evaluate_checkpoint(
         args.checkpoint,
@@ -277,6 +298,7 @@ def main() -> None:
         device=args.device,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
+        threshold_config=args.threshold_config,
     )
     print(json.dumps(result, indent=2, allow_nan=False))
 
