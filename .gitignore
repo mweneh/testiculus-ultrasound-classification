@@ -19,6 +19,7 @@ __pycache__/
 *.onnx
 checkpoints/
 artifacts/
+results/
 
 # Generated outputs
 reports/*.csv

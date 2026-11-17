@@ -11,10 +11,13 @@ from pathlib import Path
 import numpy as np
 
 from src.evaluation import calculate_metrics
-
-
-METRIC_KEYS = ("precision", "recall_sensitivity", "specificity", "f1")
-MODEL_NAMES = ("custom_cnn", "resnet18")
+from src.threshold_config import (
+    METRIC_KEYS,
+    MODEL_NAMES,
+    SELECTION_CRITERIA,
+    load_threshold_configuration,
+    validate_threshold_configuration,
+)
 
 
 def _read_csv(path: Path) -> list[dict[str, str]]:
@@ -169,17 +172,10 @@ def create_threshold_configuration(
         "format_version": 1,
         "validation_manifest": str(validation_manifest_path),
         "validation_manifest_sha256": _sha256(validation_manifest_path),
-        "selection_criteria": {
-            "partition": "validation",
-            "positive_class": 1,
-            "objective": "maximize positive-class F1-score",
-            "candidate_thresholds": "every unique probability_class_1 score",
-            "prediction_rule": "probability_class_1 >= threshold",
-            "tie_break": "choose the highest threshold among equal maximum F1 scores",
-            "test_partition_accessed": False,
-        },
+        "selection_criteria": dict(SELECTION_CRITERIA),
         "models": models,
     }
+    validate_threshold_configuration(configuration)
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
@@ -189,10 +185,68 @@ def create_threshold_configuration(
     return configuration
 
 
+def verify_threshold_configuration(
+    configuration_path: Path,
+    validation_manifest_path: Path,
+    prediction_files: dict[str, Path] | None = None,
+) -> dict:
+    """Read-only verification against an explicit validation manifest and CSVs.
+
+    Source paths can differ from the recorded Colab paths. Require their exact
+    recorded byte hashes before recomputing the complete sweep and metrics.
+    No images or other partitions are opened. Missing sources are reported as
+    unverified, never treated as a successful prediction reproduction.
+    """
+    configuration = load_threshold_configuration(configuration_path)
+    if _sha256(validation_manifest_path) != configuration["validation_manifest_sha256"]:
+        raise ValueError("Validation manifest SHA-256 does not match the record")
+    rows = _read_csv(validation_manifest_path)
+    try:
+        labels = np.asarray([int(row["label"]) for row in rows], dtype=np.int64)
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValueError("Invalid validation manifest labels") from error
+    if not labels.size or not np.isin(labels, (0, 1)).all() or not np.any(labels == 1):
+        raise ValueError("Validation manifest requires binary labels and positive examples")
+    baseline = float(np.bincount(labels, minlength=2).max() / labels.size)
+    prediction_files = {} if prediction_files is None else prediction_files
+    if not set(prediction_files).issubset(MODEL_NAMES):
+        raise ValueError(f"Unsupported prediction model; expected {MODEL_NAMES}")
+    result = {"validation_manifest_sha256_verified": True, "models": {}}
+    for name, record in configuration["models"].items():
+        if record["n_validation_samples"] != labels.size:
+            raise ValueError(f"{name}: validation sample count does not match")
+        if record["majority_class_baseline_accuracy"] != baseline:
+            raise ValueError(f"{name}: validation majority baseline does not match")
+        verified = name in prediction_files
+        if verified:
+            path = Path(prediction_files[name])
+            if _sha256(path) != record["predictions_sha256"]:
+                raise ValueError(f"{name}: predictions SHA-256 does not match the record")
+            source_labels, probabilities = load_validation_predictions(path, validation_manifest_path)
+            recomputed = {
+                "threshold_sweep": threshold_sweep(source_labels, probabilities),
+                "metrics_at_0.5": _requested_metrics(source_labels, probabilities, 0.5),
+                "metrics_at_selected_threshold": _requested_metrics(
+                    source_labels, probabilities, record["selected_threshold"]
+                ),
+            }
+            for key, value in recomputed.items():
+                if record[key] != value:
+                    raise ValueError(f"{name}: recomputed {key} does not match the record")
+        result["models"][name] = {
+            "selected_threshold": record["selected_threshold"],
+            "n_validation_samples": record["n_validation_samples"],
+            "recorded_sweep_verified": True,
+            "source_predictions_verified": verified,
+        }
+    return result
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--custom-cnn-predictions", type=Path, required=True)
-    parser.add_argument("--resnet18-predictions", type=Path, required=True)
+    parser.add_argument("--custom-cnn-predictions", type=Path)
+    parser.add_argument("--resnet18-predictions", type=Path)
+    parser.add_argument("--verify-config", type=Path, help="Verify an existing record without modifying it")
     parser.add_argument(
         "--validation-manifest", type=Path,
         default=Path("data/splits/validation.csv"),
@@ -202,11 +256,22 @@ def main() -> None:
         default=Path("reports/validation_thresholds.json"),
     )
     args = parser.parse_args()
+    prediction_files = {
+        name: path for name, path in (
+            ("custom_cnn", args.custom_cnn_predictions),
+            ("resnet18", args.resnet18_predictions),
+        ) if path is not None
+    }
+    if args.verify_config is not None:
+        result = verify_threshold_configuration(
+            args.verify_config, args.validation_manifest, prediction_files
+        )
+        print(json.dumps(result, indent=2, allow_nan=False))
+        return
+    if set(prediction_files) != set(MODEL_NAMES):
+        parser.error("Selection requires both --custom-cnn-predictions and --resnet18-predictions")
     configuration = create_threshold_configuration(
-        {
-            "custom_cnn": args.custom_cnn_predictions,
-            "resnet18": args.resnet18_predictions,
-        },
+        prediction_files,
         args.validation_manifest,
         args.output,
     )
