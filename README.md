@@ -3,11 +3,13 @@
 Reproducible binary image-classification pipeline for testicular ultrasound
 images. The repository provides a custom CNN and an ImageNet-initialized
 ResNet18, fixed image-level data splits, checkpointed training, and
-checkpoint-based evaluation.
+checkpoint-based evaluation and single-image inference.
 
-**No model has been trained as part of the current implementation.** The
-reported split and similarity audit are data-preparation results only; there
-are no model performance results to report yet.
+Actual validation-based threshold-selection results from Google Colab are
+preserved in [reports/validation_thresholds.json](reports/validation_thresholds.json).
+These are validation results; no held-out test results are reported here.
+The threshold integration did not retrain models or access the held-out test
+partition.
 
 ## Dataset and labels
 
@@ -170,12 +172,14 @@ weights or train on the medical images.
 
 ## Evaluate a selected checkpoint
 
-Evaluation is a separate command and requires an explicit manifest. The
-predeclared probability threshold is 0.5. If a different threshold is needed,
-select it using validation predictions only, record that decision, and pass the
-chosen value with `--threshold`; never tune a threshold or select a model on
-test results. Run the test command only after model and threshold selection are
-complete:
+Evaluation is a separate command and requires an explicit manifest. It loads
+the frozen validation-selected threshold for the checkpoint's `model_type`
+from `reports/validation_thresholds.json` by default. No threshold value needs
+to be copied into code or shell commands. An alternate configuration can be
+supplied with `--threshold-config`.
+
+The following final-evaluation example is for use only after checkpoint and
+threshold selection are complete. It was not run during this integration:
 
 ```bash
 python -m src.evaluation \
@@ -183,38 +187,148 @@ python -m src.evaluation \
   --data-dir data/raw \
   --manifest data/splits/test.csv \
   --output-dir artifacts/evaluation/custom_cnn_test \
-  --threshold 0.5
+  --threshold-config reports/validation_thresholds.json
 ```
+
+For ResNet18, use its checkpoint and a separate output directory; the loader
+automatically selects the `resnet18` record. Never tune thresholds or select a
+model using test results. The explicit `--threshold 0.5` option remains
+available for baseline comparisons; it cannot be combined with
+`--threshold-config`. Final evaluation should use the frozen configuration.
 
 Evaluation writes `metrics.json`, a per-image `predictions.csv`, and ROC and
 precision-recall plots. The positive class is inhomogeneous (1). Report ROC-AUC,
 average precision (the precision-recall summary), accuracy, balanced accuracy,
 precision, recall/sensitivity, specificity, F1, and the confusion matrix.
 Metrics whose required labels or predictions are absent are represented as
-`null` and named in `undefined_metrics`.
+`null` and named in `undefined_metrics`. Reports identify whether the threshold
+came from the validation configuration or an explicit override, and prediction
+rows include the applied threshold.
 
 ### Select thresholds from validation predictions
 
-Generate prediction CSVs for both selected checkpoints using the validation
-manifest, then choose the threshold maximizing positive-class F1:
+The frozen Colab experiment used the 129-image validation partition (104
+homogeneous, 25 inhomogeneous). For each selected checkpoint, the procedure was:
+
+1. Collect deterministic validation predictions with class 1 as the positive
+   class. Verify that class-qualified image paths and labels match the
+   validation manifest exactly, with no missing, extra, or repeated paths.
+2. Evaluate every unique `probability_class_1` score as a candidate threshold,
+   assigning class 1 when `probability_class_1 >= threshold`.
+3. Maximize positive-class F1. If candidates have exactly equal maximum F1,
+   choose the highest threshold. Freeze this choice before final evaluation.
+4. Save the entire sweep, selection criteria, sample count, majority baseline,
+   precision, recall/sensitivity, specificity and F1 at both 0.5 and the selected
+   threshold, plus SHA-256 hashes of the validation manifest and prediction CSVs.
+
+| Model | Selected threshold | Validation F1 at 0.5 | Validation F1 at selected threshold |
+|---|---:|---:|---:|
+| Custom CNN | `0.4541136622428894` | 0.177778 | 0.470588 |
+| ResNet18 | `0.3251684010028839` | 0.324324 | 0.422535 |
+
+Both selections are unique maxima of their recorded 129-candidate sweeps.
+The JSON preserves the original full-precision metrics, prediction hashes and
+Colab paths without modification. Validation F1 was used for threshold
+selection, so these figures are selection results, not an independent estimate
+of generalization. The majority-class validation accuracy baseline is
+`104 / 129 = 80.6%`; this is not a model result.
+
+To reproduce the procedure with the original selected checkpoints, generate
+validation predictions only and save a separate comparison record:
 
 ```bash
 python -m src.evaluation --checkpoint checkpoints/custom_cnn/best_model.pth --data-dir data/raw --manifest data/splits/validation.csv --output-dir artifacts/validation/custom_cnn --threshold 0.5
 python -m src.evaluation --checkpoint checkpoints/resnet18/best_model.pth --data-dir data/raw --manifest data/splits/validation.csv --output-dir artifacts/validation/resnet18 --threshold 0.5
-python -m src.threshold_selection --custom-cnn-predictions artifacts/validation/custom_cnn/predictions.csv --resnet18-predictions artifacts/validation/resnet18/predictions.csv --validation-manifest data/splits/validation.csv --output reports/validation_thresholds.json
+python -m src.threshold_selection --custom-cnn-predictions artifacts/validation/custom_cnn/predictions.csv --resnet18-predictions artifacts/validation/resnet18/predictions.csv --validation-manifest data/splits/validation.csv --output artifacts/reproduced_validation_thresholds.json
 ```
 
-The selector verifies that each prediction file has exactly the image paths and
-labels in the validation manifest. It evaluates every unique predicted
-positive-class probability, maximizes positive-class F1, and breaks ties by
-choosing the highest threshold. The JSON records the criteria, threshold sweep,
-precision, recall, specificity and F1 at 0.5 and at the selected threshold, and
-hashes of both input files. Do not use test predictions to select a threshold.
+The selector refuses to overwrite an existing output file. Keep the checked-in
+Colab record frozen; do not replace it with a regenerated or reduced record.
+The commands above are reproduction instructions, not a request to retrain or
+reselect thresholds. No test predictions enter threshold selection.
 
-The majority-class accuracy baseline is calculated from the labels in the
-evaluated manifest. For the current validation partition it is `104 / 129 =
-80.6%`; this baseline is not a model result. Report class-sensitive metrics
-because of the imbalance.
+### Verify the experimental record without model execution
+
+Check JSON structure, supported criteria, finite thresholds, ordered sweep
+candidates, maximum-F1 selection and selected metrics, then verify the local
+validation manifest's hash, sample count and majority baseline:
+
+```bash
+python -m src.threshold_selection \
+  --verify-config reports/validation_thresholds.json \
+  --validation-manifest data/splits/validation.csv
+```
+
+This is read-only and opens no images or other partition manifests. The local
+validation manifest matches the recorded SHA-256. Both source CSVs currently
+point to unavailable `/content/drive/MyDrive/...` Colab paths, so the command
+reports `source_predictions_verified: false` for each model. The recorded
+sweeps and their 0.5 metrics are internally consistent with the validation
+class counts, but this does not verify the original prediction bytes or their
+association with individual images.
+
+Once the original Colab CSVs have been copied to local ignored artifact paths,
+verify their exact recorded hashes, paths/labels, complete recomputed sweeps
+and metrics without running either model:
+
+```bash
+python -m src.threshold_selection \
+  --verify-config reports/validation_thresholds.json \
+  --validation-manifest data/splits/validation.csv \
+  --custom-cnn-predictions artifacts/validation/custom_cnn/predictions.csv \
+  --resnet18-predictions artifacts/validation/resnet18/predictions.csv
+```
+
+Each source is verified separately; supplying one CSV leaves the other marked
+unverified. Hash checks use file bytes, so reserializing CSVs or changing line
+endings will fail verification. Preserve the original files. The loader never
+follows recorded Colab artifact paths; explicit local paths are used only by
+the verifier.
+
+### Reproducibility and integration limits
+
+The record contains prediction and validation-manifest hashes, but no
+checkpoint hashes, selected epochs or Colab runtime/package versions. Local
+checkpoints are unavailable, so their pairing with these thresholds and their
+compatibility with the repository's checkpoint metadata cannot be confirmed.
+Before final evaluation, verify that the original selected weights correspond
+to each recorded prediction file; architecture name alone cannot prove this.
+The checkpoint loader expects `model_type`, `architecture`, `class_to_idx`
+and `model_state_dict` metadata from `src.training`. Evaluation and inference
+reject incompatible class mappings and require class 1 to be inhomogeneous.
+
+Dependencies in `requirements.txt` are unpinned, so exact probability
+reproduction across runtimes is not guaranteed. Keep the original CSVs,
+checkpoint files and environment details outside Git for the audit. Patient
+and centre identifiers remain unavailable: validation is provisional at image
+level and does not establish patient or centre independence.
+
+Only the aggregate JSON record is tracked for this experiment. Raw data,
+checkpoints, `artifacts/`, Colab-style `results/`, and `.env` remain ignored;
+do not commit medical images, prediction CSVs or credentials.
+
+## Single-image inference
+
+Use the same frozen configuration for an explicitly supplied image:
+
+```bash
+python -m src.inference \
+  --checkpoint checkpoints/resnet18/best_model.pth \
+  --image /path/to/image.png \
+  --threshold-config reports/validation_thresholds.json
+```
+
+`CheckpointPredictor` loads the model and threshold once and accepts PIL images
+through `predict(image)`. It uses deterministic preprocessing, evaluation mode,
+disabled gradients and the same inclusive decision rule as evaluation. The
+JSON response includes the probability, predicted class, applied threshold and
+configuration path. It does not discover dataset files or read split manifests.
+
+Both pipelines locate the default JSON relative to the source tree, independent
+of the working directory. A missing or invalid configuration, unsupported model
+name, or selection inconsistent with the recorded sweep causes an error rather
+than a fallback to 0.5. Include `reports/validation_thresholds.json` when
+packaging the source for inference, or supply its deployed location explicitly.
 
 ## Tests
 
@@ -228,7 +342,16 @@ The tests cover dataset loading, preprocessing, architectures without weight
 downloads, split reproducibility/nonoverlap, label mapping, exact duplicate
 grouping, class weights, synthetic-tensor training, checkpoint roundtrip, and
 metrics/plots. The held-out medical-image test manifest is not evaluated by
-the test suite.
+the test suite. Threshold tests cover the unchanged Colab record, malformed
+configuration, exact F1 ties, source-hash and metric verification, overwrite
+protection, both model lookups, inclusive threshold decisions and evaluation /
+inference consistency. All image inputs in pipeline tests are synthetic, and
+the inference checkpoint test uses untrained weights without optimization.
+To omit even the existing synthetic-training test, run:
+
+```bash
+python -m pytest -q -k 'not synthetic_training_and_checkpoint_roundtrip'
+```
 
 ## Repository layout
 
@@ -238,8 +361,11 @@ src/
   models/     custom CNN and ResNet18 definitions
   training.py training CLI and checkpoint loader
   evaluation.py checkpoint evaluation CLI and metrics
+  inference.py  single-image checkpoint inference
+  threshold_config.py    validated shared threshold loader
+  threshold_selection.py validation-only selection and record verification
 data/splits/  tracked CSV manifests with relative paths and labels
-reports/      tracked split/similarity audit
+reports/      tracked split/similarity audit and frozen validation threshold record
 tests/        automated tests; synthetic training/evaluation only
 ```
 
