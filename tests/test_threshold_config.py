@@ -1,6 +1,8 @@
 import copy
 import hashlib
 import json
+import sys
+
 import pytest
 
 from src.threshold_config import (
@@ -12,7 +14,7 @@ from src.threshold_config import (
 )
 from src.threshold_selection import (
     create_threshold_configuration,
-    threshold_sweep,
+    main as threshold_selection_main,
     verify_threshold_configuration,
 )
 
@@ -130,10 +132,22 @@ def test_loader_fails_without_fallback_and_override_is_explicit(tmp_path):
     assert resolve_threshold("custom_cnn", threshold=0.5) == 0.5
 
 
-def test_exact_f1_tie_uses_highest_threshold():
-    sweep = threshold_sweep([1, 0, 0, 1], [0.2, 0.3, 0.4, 0.5])
+def test_exact_f1_tie_uses_highest_threshold(experiment, tmp_path):
+    _, _, manifest, files = experiment
+    files["custom_cnn"].write_text(
+        "image_path,label,probability_class_1\n"
+        "homogeneous/a.png,0,0.3\nhomogeneous/b.png,0,0.4\n"
+        "inhomogeneous/a.png,1,0.2\ninhomogeneous/b.png,1,0.5\n",
+        encoding="utf-8",
+    )
+    record = create_threshold_configuration(files, manifest, tmp_path / "ties.json")
+    model = record["models"]["custom_cnn"]
+    sweep = model["threshold_sweep"]
     assert sweep[0]["f1"] == sweep[-1]["f1"] == 2 / 3
-    assert max(sweep, key=lambda row: (row["f1"], row["threshold"]))["threshold"] == 0.5
+    assert model["selected_threshold"] == 0.5
+    model["selected_threshold"] = 0.2
+    with pytest.raises(ValueError, match="tie-break"):
+        validate_threshold_configuration(record)
 
 
 def test_verifier_reproduces_relocated_sources_without_modifying_record(experiment, tmp_path):
@@ -176,3 +190,34 @@ def test_partial_source_verification_is_reported_per_model(experiment):
     )
     assert result["models"]["custom_cnn"]["source_predictions_verified"]
     assert not result["models"]["resnet18"]["source_predictions_verified"]
+
+
+def test_selection_refuses_to_overwrite_experimental_record(experiment):
+    _, configuration, manifest, files = experiment
+    original = configuration.read_bytes()
+    with pytest.raises(FileExistsError):
+        create_threshold_configuration(files, manifest, configuration)
+    assert configuration.read_bytes() == original
+
+
+@pytest.mark.parametrize("include_predictions", [False, True])
+def test_verification_cli_is_read_only(experiment, monkeypatch, capsys, include_predictions):
+    _, configuration, manifest, files = experiment
+    original = configuration.read_bytes()
+    arguments = [
+        "threshold_selection", "--verify-config", str(configuration),
+        "--validation-manifest", str(manifest),
+    ]
+    if include_predictions:
+        arguments += [
+            "--custom-cnn-predictions", str(files["custom_cnn"]),
+            "--resnet18-predictions", str(files["resnet18"]),
+        ]
+    monkeypatch.setattr(sys, "argv", arguments)
+    threshold_selection_main()
+    result = json.loads(capsys.readouterr().out)
+    assert all(
+        model["source_predictions_verified"] is include_predictions
+        for model in result["models"].values()
+    )
+    assert configuration.read_bytes() == original

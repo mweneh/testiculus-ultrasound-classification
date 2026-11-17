@@ -138,7 +138,7 @@ def create_threshold_configuration(
     validation_manifest_path: Path,
     output_path: Path,
 ) -> dict:
-    """Create the reproducible validation threshold report/configuration."""
+    """Create a new validation record, refusing to overwrite an experiment."""
     if set(prediction_files) != set(MODEL_NAMES):
         raise ValueError(f"Provide predictions for exactly: {', '.join(MODEL_NAMES)}")
 
@@ -178,10 +178,8 @@ def create_threshold_configuration(
     validate_threshold_configuration(configuration)
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(
-        json.dumps(configuration, indent=2, allow_nan=False) + "\n",
-        encoding="utf-8",
-    )
+    with output_path.open("x", encoding="utf-8") as stream:
+        stream.write(json.dumps(configuration, indent=2, allow_nan=False) + "\n")
     return configuration
 
 
