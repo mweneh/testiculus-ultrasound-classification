@@ -1,0 +1,57 @@
+{
+  "format_version": 1,
+  "research_experiments_frozen": true,
+  "partition": "test",
+  "positive_class": 1,
+  "n_samples": 129,
+  "class_counts": {"homogeneous": 104, "inhomogeneous": 25},
+  "majority_class_baseline_accuracy": 0.8062,
+  "reported_metric_decimal_places": 4,
+  "provenance": {
+    "source": "User-supplied final held-out test summaries from Google Colab",
+    "original_artifacts_verified": false,
+    "limitation": "Original metrics, prediction CSVs and trained checkpoints are not available in this checkout. ROC-AUC and average precision cannot be reconstructed from confusion matrices."
+  },
+  "models": {
+    "custom_cnn": {
+      "threshold": 0.4541136622428894,
+      "threshold_source": "reports/validation_thresholds.json",
+      "metrics": {
+        "roc_auc": 0.6123,
+        "average_precision": 0.4029,
+        "accuracy": 0.6124,
+        "balanced_accuracy": 0.5317,
+        "recall_sensitivity": 0.4000,
+        "specificity": 0.6635,
+        "f1": 0.2857
+      },
+      "confusion_matrix": {
+        "labels": [0, 1],
+        "rows_actual_columns_predicted": [[69, 35], [15, 10]]
+      },
+      "checkpoint_sha256": null,
+      "original_metrics_file": "MyDrive/Capstone/results/custom_cnn_test/metrics.json",
+      "original_predictions_file": "MyDrive/Capstone/results/custom_cnn_test/predictions.csv"
+    },
+    "resnet18": {
+      "threshold": 0.3251684010028839,
+      "threshold_source": "reports/validation_thresholds.json",
+      "metrics": {
+        "roc_auc": 0.7473,
+        "average_precision": 0.5220,
+        "accuracy": 0.6434,
+        "balanced_accuracy": 0.6421,
+        "recall_sensitivity": 0.6400,
+        "specificity": 0.6442,
+        "f1": 0.4103
+      },
+      "confusion_matrix": {
+        "labels": [0, 1],
+        "rows_actual_columns_predicted": [[67, 37], [9, 16]]
+      },
+      "checkpoint_sha256": null,
+      "original_metrics_file": "MyDrive/Capstone/results/resnet18_test/metrics.json",
+      "original_predictions_file": "MyDrive/Capstone/results/resnet18_test/predictions.csv"
+    }
+  }
+}
