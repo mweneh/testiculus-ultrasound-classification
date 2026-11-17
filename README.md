@@ -193,8 +193,28 @@ precision, recall/sensitivity, specificity, F1, and the confusion matrix.
 Metrics whose required labels or predictions are absent are represented as
 `null` and named in `undefined_metrics`.
 
-The majority-class accuracy baseline is `696 / 860 = 80.9%`. This baseline is
-not a model result. Report class-sensitive metrics because of the imbalance.
+### Select thresholds from validation predictions
+
+Generate prediction CSVs for both selected checkpoints using the validation
+manifest, then choose the threshold maximizing positive-class F1:
+
+```bash
+python -m src.evaluation --checkpoint checkpoints/custom_cnn/best_model.pth --data-dir data/raw --manifest data/splits/validation.csv --output-dir artifacts/validation/custom_cnn --threshold 0.5
+python -m src.evaluation --checkpoint checkpoints/resnet18/best_model.pth --data-dir data/raw --manifest data/splits/validation.csv --output-dir artifacts/validation/resnet18 --threshold 0.5
+python -m src.threshold_selection --custom-cnn-predictions artifacts/validation/custom_cnn/predictions.csv --resnet18-predictions artifacts/validation/resnet18/predictions.csv --validation-manifest data/splits/validation.csv --output reports/validation_thresholds.json
+```
+
+The selector verifies that each prediction file has exactly the image paths and
+labels in the validation manifest. It evaluates every unique predicted
+positive-class probability, maximizes positive-class F1, and breaks ties by
+choosing the highest threshold. The JSON records the criteria, threshold sweep,
+precision, recall, specificity and F1 at 0.5 and at the selected threshold, and
+hashes of both input files. Do not use test predictions to select a threshold.
+
+The majority-class accuracy baseline is calculated from the labels in the
+evaluated manifest. For the current validation partition it is `104 / 129 =
+80.6%`; this baseline is not a model result. Report class-sensitive metrics
+because of the imbalance.
 
 ## Tests
 

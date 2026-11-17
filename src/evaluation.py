@@ -28,11 +28,8 @@ from src.data.transforms import get_transforms
 from src.training import load_checkpoint, select_device
 
 
-MAJORITY_CLASS_BASELINE = 696 / 860
-
-
 def calculate_metrics(labels, probabilities, threshold: float = 0.5,
-                      majority_baseline: float = MAJORITY_CLASS_BASELINE) -> dict:
+                      majority_baseline: float | None = None) -> dict:
     """Calculate class-sensitive metrics for inhomogeneous class 1.
 
     Metrics whose mathematical preconditions are not met are returned as
@@ -50,6 +47,11 @@ def calculate_metrics(labels, probabilities, threshold: float = 0.5,
         raise ValueError("Probabilities must be finite values in [0, 1]")
     if not 0 <= threshold <= 1:
         raise ValueError("threshold must be in [0, 1]")
+    if majority_baseline is None:
+        class_counts = np.bincount(labels, minlength=2)
+        majority_baseline = float(class_counts.max() / labels.size)
+    elif not np.isfinite(majority_baseline) or not 0 <= majority_baseline <= 1:
+        raise ValueError("majority_baseline must be finite and in [0, 1]")
 
     predictions = (probabilities >= threshold).astype(np.int64)
     matrix = confusion_matrix(labels, predictions, labels=[0, 1])
