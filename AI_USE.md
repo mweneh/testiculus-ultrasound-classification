@@ -20,8 +20,8 @@ CC BY-NC-SA 4.0, as documented in [data/README.md](data/README.md).
 The developer reports that both research models completed training, validation
 threshold selection and final held-out test evaluation in Google Colab. Those
 experiments are frozen. No research model training, threshold optimization or
-held-out image evaluation was performed during this application implementation.
-The existing synthetic-training test was excluded from the application checks.
+held-out image evaluation was performed during the initial two-model application
+implementation. The existing synthetic-training test was excluded from those checks.
 Its exact name is
 `tests/test_training.py::test_synthetic_training_and_checkpoint_roundtrip`;
 it optimizes a newly initialized model for one epoch on random 16×16 tensors.
@@ -59,7 +59,7 @@ test container was stopped and removed. Aggregate evidence is recorded in
 ultrasound displays and image grids embedded in the tracked exploration
 notebook. The assistant cleared its saved outputs and execution counts without
 executing the notebook or changing its source cells, and added a regression
-test. The current suite has 129 passing tests and one deselected test out of
+test. At that phase, the suite had 129 passing tests and one deselected test out of
 130 collected, with one Starlette TestClient deprecation warning. The trained
 artifact and container acceptance checks are separate from this count.
 
@@ -89,6 +89,48 @@ documented attribution and ShareAlike for dataset-based Grad-CAM images and
 other adaptations, separately from software licensing. This documentation
 update did not remove additional images, rewrite history or modify the frozen
 research artifacts.
+
+The developer subsequently authorized one MobileNetV3-Small exploratory
+experiment after the original test outcomes were already known. The assistant
+implemented its architecture, preprocessing, frozen-feature training (including
+BatchNorm statistics), checkpoint integration, separate validation-threshold
+record, API, Grad-CAM and Docker support. It ran a synthetic CPU preflight,
+then trained the MobileNet head on the unchanged training manifest using
+ImageNet initialization, AdamW, training-label class weights, seed 42, batch
+size 16 and learning rate 0.0001. The actual device was CPU; early stopping
+completed 10 epochs in 93.44 seconds and selected epoch 5 by validation loss.
+No feature blocks were subsequently fine-tuned.
+
+The assistant generated validation predictions, applied the unchanged maximum-F1
+selection criterion and froze threshold 0.5038942694664001 with checkpoint and
+source hashes. Only then did it run one MobileNet evaluation on the existing
+test images. This authorized post-hoc evaluation is separate from the earlier
+application checks that did not open test images. No test-based tuning followed.
+The original two checkpoints, thresholds, raw artifacts and aggregate results
+were verified unchanged. Full-precision evidence and limitations are in
+`reports/mobilenet_exploratory_results.json` and the experiment guide.
+
+CPU efficiency measurements used the same hardware, input size, batch size,
+thread counts, warm-up and repeated-forward method for all three trained models.
+Existing classifiers were loaded for inference only. The synthetic training
+probe optimized a disposable MobileNet copy. The extension's complete unit suite
+also includes fresh synthetic training tests, including the previously excluded
+test; these do not retrain the original research checkpoints. The final complete
+suite passed 150 tests with one Starlette TestClient deprecation warning and no
+deselections. The assistant helped write the exploratory comparison and this
+disclosure. Human scientific
+review remains required; one reused test partition does not establish a
+confirmatory, patient-independent, centre-independent or clinical result.
+
+The trained MobileNet API was separately compared with local inference on the
+validation sample defining the selected threshold. API and local probabilities
+matched exactly; the saved two-thread validation probability differed by
+1.19e-7 with one thread and the decision agreed. Synthetic Grad-CAM preserved
+predictions and parameter gradients. A separate Docker image passed synthetic
+API and Grad-CAM checks for all three trained checkpoints, mounted read-only;
+its temporary container was removed. The successful build reused the verified
+dependency cache after an uncached PyTorch wheel download timed out. No package
+versions or original deployment image tag were changed.
 
 No clinical conclusions were generated. The project developer remains
 responsible for confirming data provenance, reviewing the split policy,

@@ -5,9 +5,11 @@ images. The repository provides a custom CNN and an ImageNet-initialized
 ResNet18, fixed image-level data splits, checkpointed training, and
 checkpoint-based evaluation and single-image inference.
 
-Both models completed training, validation-based threshold selection and final
-held-out test evaluation in Google Colab. **The research experiments are
-frozen.** This application work does not retrain models or optimize thresholds.
+The original Custom CNN and ResNet18 completed training, validation-based
+threshold selection and final held-out evaluation in Google Colab. **Those
+experiments remain frozen.** Their checkpoints, thresholds and results are
+unchanged. A separately recorded MobileNetV3-Small experiment was subsequently
+authorized and completed as a **post-hoc exploratory extension**.
 
 The [experiment summary](reports/experiment_summary.md) separates validation
 selection from final test results. The complete validation record is preserved
@@ -76,6 +78,29 @@ thresholds, confusion matrices and all supplied metrics at the stated precision,
 and never changes the frozen records. The separate complete verification command
 below also recomputes metrics from prediction CSVs without final held-out model
 execution.
+
+## Exploratory MobileNetV3-Small extension
+
+MobileNet was added after the original test outcomes were known, so it is not a
+prospectively specified third comparison arm. Its ImageNet-initialized feature
+extractor and BatchNorm statistics were frozen while the classification head
+was trained locally on CPU. Early stopping completed 10 epochs in 93.44 seconds
+and selected epoch 5. The validation-only frozen threshold is
+`0.5038942694664001`, stored separately in
+[mobilenet_v3_small_thresholds.json](reports/mobilenet_v3_small_thresholds.json).
+
+After configuration freeze, one test evaluation produced ROC-AUC **0.6562**,
+AP **0.4889**, accuracy **0.8217**, balanced accuracy **0.6463**, sensitivity
+**0.3600**, specificity **0.9327** and F1 **0.4390**; confusion matrix
+`[[97,7],[16,9]]`. No tuning followed. Original model results above were preserved.
+
+The [comparison report](reports/mobilenet_exploratory_summary.md) includes model
+size, parameters and CPU latency measured under common conditions for all three
+trained checkpoints. The [experiment guide](docs/mobilenet_experiment.md)
+documents the CPU configuration, benchmark, training/evaluation order, source
+hashes and optional API/Docker deployment. MobileNet does not replace the
+existing ResNet18 demonstration. Its sensitivity is low; the exploratory result
+does not establish overall superiority or clinical suitability.
 
 ## Dataset and labels
 
@@ -433,6 +458,13 @@ trained checkpoints with `pretrained=False`; it does not download ImageNet
 weights. Preprocessing follows the recorded ultrasound-training transforms,
 including direct 224×224 resizing, rather than the default ImageNet crop recipe.
 
+The third checkpoint, `training_runs/mobilenet_v3_small/best_model.pth`, was
+trained locally for the documented exploratory extension, initialized from
+Torchvision's `MobileNet_V3_Small_Weights.IMAGENET1K_V1`. Its source, configuration
+and weight hashes are preserved in
+[the exploratory record](reports/mobilenet_exploratory_results.json); it is also
+excluded from Git and must be supplied separately for deployment.
+
 The downloaded threshold file is byte-identical to the unchanged tracked record.
 Checkpoint, history, metric and prediction-file hashes are recorded in
 `reports/artifact_verification.json`; they fingerprint supplied local copies and
@@ -473,11 +505,12 @@ disabled gradients and the same inclusive decision rule as evaluation. The
 JSON response includes the probability, predicted class, applied threshold and
 configuration path. It does not discover dataset files or read split manifests.
 
-Both pipelines locate the default JSON relative to the source tree, independent
-of the working directory. A missing or invalid configuration, unsupported model
-name, or selection inconsistent with the recorded sweep causes an error rather
+Both pipelines locate the model-specific default JSON relative to the source
+tree, independent of the working directory. A missing or invalid configuration,
+unsupported model name, or selection inconsistent with the recorded sweep causes an error rather
 than a fallback to 0.5. Include `reports/validation_thresholds.json` when
 packaging the source for inference, or supply its deployed location explicitly.
+MobileNet additionally requires `reports/mobilenet_v3_small_thresholds.json`.
 
 ## FastAPI application
 
@@ -509,7 +542,10 @@ export DEVICE=cpu
 uvicorn src.api:app --host 127.0.0.1 --port 8000
 ```
 
-Configure either or both models. Each configured checkpoint is loaded once
+Configure either or both original models. MobileNet is optional; see the
+[extension deployment commands](docs/mobilenet_experiment.md#inference-api-grad-cam-and-docker)
+for its checkpoint variable and model-specific threshold lookup.
+Each configured checkpoint is loaded once
 during application lifespan startup; missing files, incompatible checkpoint
 metadata or invalid threshold configuration fail startup. Random weights are
 used only by tests and are never a service fallback. `create_app(...)` also
@@ -521,7 +557,8 @@ curl --fail -F 'file=@/path/to/image.png' \
   'http://127.0.0.1:8000/predict?model_type=resnet18'
 ```
 
-`POST /predict` requires `model_type=custom_cnn` or `model_type=resnet18` and a
+`POST /predict` requires `model_type=custom_cnn`, `model_type=resnet18` or
+`model_type=mobilenet_v3_small` and a
 multipart `file`. It returns `model_type`, `prediction` (0 or 1), `class_name`,
 `positive_class`, `probability_class_1`, the frozen `threshold` and its
 `threshold_source`. There is no request-level threshold override. `/health`
@@ -532,7 +569,7 @@ over 5 MiB or 20 megapixels return 413. The application does not persist uploads
 
 API and CLI share `CheckpointPredictor` and deterministic preprocessing:
 
-| Step | Custom CNN | ResNet18 |
+| Step | Custom CNN | ResNet18 / MobileNetV3-Small |
 |---|---|---|
 | Source conversion | Grayscale L | Grayscale L |
 | Resize | 224×224, bilinear | 224×224, bilinear |
@@ -560,7 +597,8 @@ The implementation follows [Selvaraju et al., Grad-CAM](https://arxiv.org/abs/16
 differentiate the target class's pre-softmax logit, spatially average its
 gradients, weight activation channels, sum and apply ReLU. Target layers are
 `features.12` (Custom CNN's last convolution) and `layer4.1` (ResNet18's final
-residual block). The heatmap is interpolated to model input size and normalized
+residual block); MobileNet uses its final spatial feature block, `features.12`.
+The heatmap is interpolated to model input size and normalized
 to [0, 1]; constant maps become zeros. Temporary hooks are removed, model modes
 are restored and weights/parameter gradients remain unchanged.
 
@@ -584,8 +622,9 @@ docker build -t testiculus-inference:local .
 ```
 
 The build context allows only source code, serving requirements, Dockerfile
-and the frozen threshold JSON. Datasets, checkpoints, histories, prediction
-artifacts, credentials, Git metadata and virtual environments are excluded.
+and the two model-specific frozen threshold records. Datasets, checkpoints,
+histories, prediction artifacts, credentials, Git metadata and virtual
+environments are excluded.
 The image contains no trained weights. Mount downloaded checkpoints read-only:
 
 ```bash
@@ -673,26 +712,37 @@ It runs one optimization epoch on a newly initialized Custom CNN using random
 It uses neither ultrasound images nor the trained Colab checkpoints. It was
 deselected to keep application verification free of optimization; it is not a
 reported failure. An unfiltered `python -m pytest -q` includes that test and
-performs the synthetic optimization, so it was not run for this frozen work.
+performs the synthetic optimization, so it was not run during the initial
+two-model application checks. It is included in the MobileNet extension checks.
 
 API tests use FastAPI TestClient with actual untrained checkpoint
-roundtrips for both architectures; no ImageNet downloads or optimization occur.
+roundtrips for all three architectures; no ImageNet downloads or optimization occur.
 They cover upload validation, startup configuration, model-specific decisions,
 readiness and API/CLI probability agreement. Grad-CAM tests cover analytic
-attribution, both architectures, constant maps, mode/gradient preservation,
+attribution, all three architectures, constant maps, mode/gradient preservation,
 hook cleanup and CLI output alignment. Summary tests check supplied metrics
 against confusion counts and frozen thresholds. The serving tests validate
 software behavior. The separate artifact acceptance checks reproduce saved
 Colab metrics from prediction CSVs and verify trained-model compatibility.
 
 The earlier application run on 18 November 2026 had **128 passed, 1 deselected**.
-After adding the notebook hygiene regression test, the current run has
+After adding the notebook hygiene regression test, that phase had
 **129 passed, 1 deselected** (130 collected). It emits one Starlette warning
 that its HTTPX-based TestClient integration is deprecated; the API tests pass.
 These counts do not include the separate original-artifact acceptance or
 running-container smoke checks, which also passed with the trained weights.
 The only original metric discrepancy is the documented validation majority
 baseline; no threshold, weight, prediction CSV or original metric file changed.
+
+The MobileNet extension adds architecture/initialization, frozen-backbone and
+BatchNorm preservation, CPU timing, checkpoint, preprocessing, validation
+selection, API, Grad-CAM and single-evaluation safeguards. Its complete test run
+uses `python -m pytest -q`, including the legacy synthetic-training test and
+the new synthetic MobileNet optimization test. These train fresh temporary
+models only; the original research checkpoints are not retrained. The current
+full suite has **150 passed**, with one Starlette TestClient deprecation warning
+and no deselections. The earlier exclusion and 128/129 counts above describe
+the initial frozen two-model application phase.
 
 ## Repository layout
 
@@ -707,6 +757,9 @@ src/
   gradcam.py    Grad-CAM and overlay CLI
   experiment_summary.py frozen result checks and summary generator
   artifact_verification.py original artifacts and trained-model acceptance
+  cpu_benchmark.py CPU forwards and disposable synthetic head-training probe
+  exploratory_evaluation.py freeze evidence and guard one exploratory test run
+  model_comparison.py saved exploratory metrics and efficiency comparison
   container_smoke.py Docker acceptance with synthetic pixels / trained weights
   threshold_config.py    validated shared threshold loader
   threshold_selection.py validation-only selection and record verification
