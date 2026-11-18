@@ -94,18 +94,39 @@ masks are not model inputs. The labelled images are 300×300 pixels. Retain
 segmentation mask is empty. Exclude it only from work that requires a valid
 segmentation mask.
 
+### Dataset attribution
+
+TesticulUS is credited to Morelli et al. and the dataset contributors.
+
+- Dataset: [official TesticulUS page](https://ditto.ing.unimore.it/testiculus/).
+- Licence: [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+- Cite both required publications: [Morelli et al., ICIAP 2025](https://federicobolelli.it/pub_files/2025iciap.pdf)
+  and [Morelli et al., BMVC 2026](https://iris.unimore.it/handle/11380/1416328).
+  The provider's supplied entries are preserved in [references.bib](data/references.bib)
+  with keys `2025ICIAP` and `2026BMVC`.
+
+The licence permits noncommercial sharing and adaptation with attribution and
+ShareAlike. Original dataset images and adapted ultrasound visualizations are
+subject to CC BY-NC-SA 4.0. Dataset-based Grad-CAM visualizations, overlays and
+other modified images are adaptations: when sharing them, credit the creators,
+link the dataset and licence, identify changes, cite both papers and apply the
+applicable ShareAlike terms. Independently developed software is governed by
+its own applicable licence; this dataset notice does not relicense the code.
+See the [dataset documentation](data/README.md) for attribution examples and
+the separate software-licence status.
+
 ### Provenance and limitations
 
 The local directory structure is labelled TesticulUS, but this checkout has no
-archive checksum, release identifier, provider receipt, or accompanying license
-file that establishes the exact source version. The local copy contains 1,060
+archive checksum, release identifier or provider receipt establishing the exact
+source version. The local copy contains 1,060
 images across `homogeneous/`, `inhomogeneous/`, and `imgs/` (860 labelled and
 200 unlabelled). The [official dataset page](https://ditto.ing.unimore.it/testiculus/)
 now describes TesticulUS-Real as 1,053 real images and also describes the
 separate synthetic TesticulUS-Syn release. The local copy therefore is not
-treated as verified byte-for-byte identical to that public release. Confirm
-the exact provenance and reuse terms with the data provider before
-redistribution.
+treated as verified byte-for-byte identical to that public release. This
+unresolved version match is separate from the official dataset's documented
+CC BY-NC-SA 4.0 licence.
 
 Related publications and the authors' resources:
 
@@ -196,7 +217,8 @@ python -m pip install -r requirements.txt
 Place the labelled images under `data/raw/homogeneous/` and
 `data/raw/inhomogeneous/`, with the optional unlabelled images and masks in
 their documented folders. Do not commit raw images, virtual environments, or
-model checkpoints.
+model checkpoints. Keeping dataset images out of Git is this repository's
+source-control policy, not a prohibition on sharing under the dataset licence.
 
 The exploration notebook is tracked with saved outputs and execution counts
 cleared. Before committing an executed notebook, clear all outputs and remove
@@ -548,6 +570,8 @@ inspect a specific class. Outputs are `heatmap.png` (224×224 grayscale),
 `overlay.png` (red attribution at original image size) and `prediction.json`
 with the threshold, prediction, explained class and target layer. Generated
 overlays may reproduce source images and belong under ignored `artifacts/`.
+Grad-CAM visualizations derived from TesticulUS images are adaptations covered
+by the [dataset attribution and ShareAlike requirements](#dataset-attribution).
 These are coarse attribution maps, not segmentation masks, verified lesion
 localization or evidence of clinical validity.
 

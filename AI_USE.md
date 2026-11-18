@@ -13,8 +13,9 @@ The AI-assisted code requires project-developer review. Automated tests have
 been run, but the generated split and similarity candidates still require
 human methodological review. In particular, 22 perceptual-hash candidate pairs
 are listed in `reports/similarity_audit.md`; their similarity does not establish duplicate
-acquisition or patient identity. The exact provenance and reuse terms of the
-local image copy also require confirmation.
+acquisition or patient identity. The exact release provenance of the local
+image copy remains unverified. The official dataset is licensed under
+CC BY-NC-SA 4.0, as documented in [data/README.md](data/README.md).
 
 The developer reports that both research models completed training, validation
 threshold selection and final held-out test evaluation in Google Colab. Those
@@ -80,6 +81,14 @@ probabilities matched the CLIs exactly, and the server was stopped afterward.
 The pre-existing development environment inherits unrelated system packages
 with dependency conflicts; these do not occur in the clean serving environment
 or the Docker image, whose dependency check also passed.
+
+At the developer's request, the assistant corrected the dataset licensing
+documentation using the official dataset page and Creative Commons licence.
+It preserved the provider's BibTeX entries for both required publications and
+documented attribution and ShareAlike for dataset-based Grad-CAM images and
+other adaptations, separately from software licensing. This documentation
+update did not remove additional images, rewrite history or modify the frozen
+research artifacts.
 
 No clinical conclusions were generated. The project developer remains
 responsible for confirming data provenance, reviewing the split policy,
