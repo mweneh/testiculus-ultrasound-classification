@@ -15,7 +15,7 @@ import httpx
 from PIL import Image
 
 from src.inference import CheckpointPredictor
-from src.threshold_config import MODEL_NAMES
+from src.threshold_config import LEGACY_MODEL_NAMES as MODEL_NAMES
 
 
 def _docker(*arguments: str) -> str:

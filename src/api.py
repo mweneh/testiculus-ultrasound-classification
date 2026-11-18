@@ -13,12 +13,12 @@ from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
 from src.inference import CheckpointPredictor
-from src.threshold_config import DEFAULT_THRESHOLD_CONFIG, MODEL_NAMES
+from src.threshold_config import MODEL_NAMES
 
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 MAX_IMAGE_PIXELS = 20_000_000
-ModelType = Literal["custom_cnn", "resnet18"]
+ModelType = Literal["custom_cnn", "resnet18", "mobilenet_v3_small"]
 
 
 class PredictionResponse(BaseModel):
@@ -46,11 +46,11 @@ def create_app(checkpoint_paths: dict[str, Path] | None = None, *,
             }
         if not paths or not set(paths).issubset(MODEL_NAMES):
             raise RuntimeError(
-                "Configure CUSTOM_CNN_CHECKPOINT and/or RESNET18_CHECKPOINT with existing checkpoints"
+                "Configure a supported model's CHECKPOINT environment variable with an existing checkpoint"
             )
-        config = threshold_config if threshold_config is not None else Path(
-            os.environ.get("THRESHOLD_CONFIG", str(DEFAULT_THRESHOLD_CONFIG))
-        )
+        config = threshold_config
+        if config is None and os.environ.get("THRESHOLD_CONFIG"):
+            config = Path(os.environ["THRESHOLD_CONFIG"])
         target_device = device if device is not None else os.environ.get("DEVICE", "cpu")
         predictors = {}
         for name, path in paths.items():

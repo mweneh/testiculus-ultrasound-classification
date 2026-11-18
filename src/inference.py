@@ -11,7 +11,7 @@ import torch
 from PIL import Image
 
 from src.data.transforms import get_transforms
-from src.threshold_config import DEFAULT_THRESHOLD_CONFIG, resolve_threshold
+from src.threshold_config import default_threshold_config, resolve_threshold
 from src.training import CLASS_TO_LABEL, load_checkpoint, select_device
 
 
@@ -27,7 +27,7 @@ class CheckpointPredictor:
         if checkpoint.get("class_to_idx") != CLASS_TO_LABEL:
             raise ValueError("Checkpoint class mapping must assign inhomogeneous to class 1")
         self.threshold_config = (
-            DEFAULT_THRESHOLD_CONFIG if threshold_config is None else Path(threshold_config)
+            default_threshold_config(self.model_type) if threshold_config is None else Path(threshold_config)
         )
         self.threshold = resolve_threshold(self.model_type, threshold_config=self.threshold_config)
         self.transform = get_transforms(self.model_type, training=False)

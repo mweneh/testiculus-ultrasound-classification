@@ -11,7 +11,9 @@ from pathlib import Path
 DEFAULT_THRESHOLD_CONFIG = (
     Path(__file__).resolve().parents[1] / "reports" / "validation_thresholds.json"
 )
-MODEL_NAMES = ("custom_cnn", "resnet18")
+LEGACY_MODEL_NAMES = ("custom_cnn", "resnet18")
+MODEL_NAMES = (*LEGACY_MODEL_NAMES, "mobilenet_v3_small")
+MOBILENET_THRESHOLD_CONFIG = DEFAULT_THRESHOLD_CONFIG.with_name("mobilenet_v3_small_thresholds.json")
 METRIC_KEYS = ("precision", "recall_sensitivity", "specificity", "f1")
 SELECTION_CRITERIA = {
     "partition": "validation",
@@ -22,6 +24,12 @@ SELECTION_CRITERIA = {
     "tie_break": "choose the highest threshold among equal maximum F1 scores",
     "test_partition_accessed": False,
 }
+
+
+def default_threshold_config(model_type: str) -> Path:
+    if model_type not in MODEL_NAMES:
+        raise ValueError(f"Unsupported threshold model_type: {model_type}")
+    return MOBILENET_THRESHOLD_CONFIG if model_type == "mobilenet_v3_small" else DEFAULT_THRESHOLD_CONFIG
 
 
 def _object(value, required, context: str) -> dict:
@@ -58,7 +66,7 @@ def _metrics(value, keys, context: str) -> None:
 
 
 def validate_threshold_configuration(configuration: dict) -> None:
-    """Check version-1 provenance, model records, sweeps, and selection rule.
+    """Validate original version-1 or exploratory version-2 selection evidence.
 
     This checks the recorded evidence for consistency. Source prediction hashes
     and recomputed metrics require the separate validation-only verifier.
@@ -67,7 +75,8 @@ def validate_threshold_configuration(configuration: dict) -> None:
         "format_version", "validation_manifest", "validation_manifest_sha256",
         "selection_criteria", "models",
     ), "Threshold configuration")
-    if type(configuration["format_version"]) is not int or configuration["format_version"] != 1:
+    version = configuration["format_version"]
+    if type(version) is not int or version not in (1, 2):
         raise ValueError("Unsupported threshold configuration format_version")
     _text(configuration["validation_manifest"], "validation_manifest")
     _hash(configuration["validation_manifest_sha256"], "validation_manifest_sha256")
@@ -76,9 +85,14 @@ def validate_threshold_configuration(configuration: dict) -> None:
         if type(criteria[key]) is not type(expected) or criteria[key] != expected:
             raise ValueError(f"Unsupported selection_criteria.{key}: {criteria[key]!r}")
 
-    models = _object(configuration["models"], MODEL_NAMES, "models")
-    if set(models) != set(MODEL_NAMES):
-        raise ValueError(f"models must contain exactly {MODEL_NAMES}")
+    expected_models = LEGACY_MODEL_NAMES if version == 1 else ("mobilenet_v3_small",)
+    if version == 2:
+        if (configuration.get("experiment_status") != "post-hoc exploratory"
+                or configuration.get("original_test_outcomes_previously_observed") is not True):
+            raise ValueError("Version 2 requires explicit post-hoc exploratory provenance")
+    models = _object(configuration["models"], expected_models, "models")
+    if set(models) != set(expected_models):
+        raise ValueError(f"models must contain exactly {expected_models}")
     for name, model in models.items():
         _object(model, (
             "predictions_file", "predictions_sha256", "n_validation_samples",
@@ -146,11 +160,13 @@ def load_threshold_configuration(path: Path = DEFAULT_THRESHOLD_CONFIG) -> dict:
 
 
 def load_selected_threshold(model_type: str,
-                            path: Path = DEFAULT_THRESHOLD_CONFIG) -> float:
+                            path: Path | None = None) -> float:
     """Look up a threshold by checkpoint model_type; fail instead of falling back."""
     if model_type not in MODEL_NAMES:
         raise ValueError(f"Unsupported threshold model_type: {model_type}")
-    configuration = load_threshold_configuration(path)
+    configuration = load_threshold_configuration(default_threshold_config(model_type) if path is None else path)
+    if model_type not in configuration["models"]:
+        raise ValueError(f"Threshold configuration has no record for {model_type}")
     return float(configuration["models"][model_type]["selected_threshold"])
 
 
@@ -163,5 +179,5 @@ def resolve_threshold(model_type: str, threshold: float | None = None,
         if threshold_config is not None:
             raise ValueError("Provide threshold or threshold_config, not both")
         return _unit_number(threshold, "threshold")
-    path = DEFAULT_THRESHOLD_CONFIG if threshold_config is None else threshold_config
+    path = default_threshold_config(model_type) if threshold_config is None else threshold_config
     return load_selected_threshold(model_type, path)

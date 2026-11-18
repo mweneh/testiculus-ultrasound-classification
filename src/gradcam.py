@@ -1,4 +1,4 @@
-"""Gradient-weighted class activation maps for the two frozen architectures."""
+"""Gradient-weighted class activation maps for supported research classifiers."""
 
 from __future__ import annotations
 
@@ -17,6 +17,8 @@ def get_target_layer(model: torch.nn.Module, model_type: str) -> tuple[str, torc
         return "features.12", model.features[12]
     if model_type == "resnet18":
         return "layer4.1", model.layer4[-1]
+    if model_type == "mobilenet_v3_small":
+        return "features.12", model.features[-1]
     raise ValueError(f"Unsupported Grad-CAM model_type: {model_type}")
 
 

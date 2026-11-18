@@ -25,7 +25,7 @@ from torch.utils.data import DataLoader
 
 from src.data.dataset import TesticulUSDataset
 from src.data.transforms import get_transforms
-from src.threshold_config import DEFAULT_THRESHOLD_CONFIG, resolve_threshold
+from src.threshold_config import default_threshold_config, resolve_threshold
 from src.training import CLASS_TO_LABEL, load_checkpoint, select_device
 
 
@@ -258,7 +258,7 @@ def evaluate_checkpoint(checkpoint_path: Path, data_dir: Path,
         "n_samples": int(len(labels)),
         "threshold_source": "explicit_override" if threshold is not None else "validation_configuration",
         "threshold_config": (
-            str(DEFAULT_THRESHOLD_CONFIG if threshold_config is None else threshold_config)
+            str(default_threshold_config(model_type) if threshold_config is None else threshold_config)
             if threshold is None else None
         ),
         "metrics": metrics,
@@ -281,7 +281,7 @@ def main() -> None:
     )
     threshold_options.add_argument(
         "--threshold-config", type=Path,
-        help="Validation threshold record (defaults to reports/validation_thresholds.json)",
+        help="Validation threshold record (defaults to the model-specific frozen record)",
     )
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--num-workers", type=int, default=0)

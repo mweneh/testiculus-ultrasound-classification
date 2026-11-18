@@ -18,7 +18,7 @@ from src.evaluation import calculate_metrics
 from src.experiment_summary import load_experiment_results, verify_metrics_artifact
 from src.gradcam import compute_gradcam, get_target_layer
 from src.inference import CheckpointPredictor
-from src.threshold_config import DEFAULT_THRESHOLD_CONFIG, MODEL_NAMES
+from src.threshold_config import DEFAULT_THRESHOLD_CONFIG, LEGACY_MODEL_NAMES as MODEL_NAMES
 from src.threshold_selection import verify_threshold_configuration
 from src.training import _preprocessing_metadata
 

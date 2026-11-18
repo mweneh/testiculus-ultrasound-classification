@@ -14,6 +14,7 @@ from src.evaluation import calculate_metrics
 from src.threshold_config import (
     METRIC_KEYS,
     MODEL_NAMES,
+    LEGACY_MODEL_NAMES,
     SELECTION_CRITERIA,
     load_threshold_configuration,
     validate_threshold_configuration,
@@ -139,11 +140,12 @@ def create_threshold_configuration(
     output_path: Path,
 ) -> dict:
     """Create a new validation record, refusing to overwrite an experiment."""
-    if set(prediction_files) != set(MODEL_NAMES):
-        raise ValueError(f"Provide predictions for exactly: {', '.join(MODEL_NAMES)}")
+    mobile = set(prediction_files) == {"mobilenet_v3_small"}
+    if not mobile and set(prediction_files) != set(LEGACY_MODEL_NAMES):
+        raise ValueError("Provide both original model CSVs, or only MobileNet predictions")
 
     models = {}
-    for model_name in MODEL_NAMES:
+    for model_name in prediction_files:
         predictions_path = Path(prediction_files[model_name])
         labels, probabilities = load_validation_predictions(
             predictions_path, validation_manifest_path
@@ -169,12 +171,15 @@ def create_threshold_configuration(
         }
 
     configuration = {
-        "format_version": 1,
+        "format_version": 2 if mobile else 1,
         "validation_manifest": str(validation_manifest_path),
         "validation_manifest_sha256": _sha256(validation_manifest_path),
         "selection_criteria": dict(SELECTION_CRITERIA),
         "models": models,
     }
+    if mobile:
+        configuration.update(experiment_status="post-hoc exploratory",
+                             original_test_outcomes_previously_observed=True)
     validate_threshold_configuration(configuration)
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -207,7 +212,7 @@ def verify_threshold_configuration(
         raise ValueError("Validation manifest requires binary labels and positive examples")
     baseline = float(np.bincount(labels, minlength=2).max() / labels.size)
     prediction_files = {} if prediction_files is None else prediction_files
-    if not set(prediction_files).issubset(MODEL_NAMES):
+    if not set(prediction_files).issubset(configuration["models"]):
         raise ValueError(f"Unsupported prediction model; expected {MODEL_NAMES}")
     result = {"validation_manifest_sha256_verified": True, "models": {}}
     for name, record in configuration["models"].items():
@@ -244,6 +249,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--custom-cnn-predictions", type=Path)
     parser.add_argument("--resnet18-predictions", type=Path)
+    parser.add_argument("--mobilenet-predictions", type=Path)
     parser.add_argument("--verify-config", type=Path, help="Verify an existing record without modifying it")
     parser.add_argument(
         "--validation-manifest", type=Path,
@@ -258,6 +264,7 @@ def main() -> None:
         name: path for name, path in (
             ("custom_cnn", args.custom_cnn_predictions),
             ("resnet18", args.resnet18_predictions),
+            ("mobilenet_v3_small", args.mobilenet_predictions),
         ) if path is not None
     }
     if args.verify_config is not None:
@@ -266,8 +273,8 @@ def main() -> None:
         )
         print(json.dumps(result, indent=2, allow_nan=False))
         return
-    if set(prediction_files) != set(MODEL_NAMES):
-        parser.error("Selection requires both --custom-cnn-predictions and --resnet18-predictions")
+    if set(prediction_files) not in (set(LEGACY_MODEL_NAMES), {"mobilenet_v3_small"}):
+        parser.error("Selection requires both original prediction CSVs or only --mobilenet-predictions")
     configuration = create_threshold_configuration(
         prediction_files,
         args.validation_manifest,
