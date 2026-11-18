@@ -20,6 +20,7 @@ RUN python -m pip install torch==2.14.1 torchvision==0.29.1 --index-url https://
 
 COPY --chown=inference:inference src/ ./src/
 COPY --chown=inference:inference reports/validation_thresholds.json ./reports/validation_thresholds.json
+COPY --chown=inference:inference reports/mobilenet_v3_small_thresholds.json ./reports/mobilenet_v3_small_thresholds.json
 
 USER 10001:10001
 EXPOSE 8000

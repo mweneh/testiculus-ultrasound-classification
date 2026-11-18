@@ -27,9 +27,10 @@ def _require(condition: bool, message: str) -> None:
         raise RuntimeError(message)
 
 
-def verify_container(image_tag: str, checkpoints_dir: Path) -> dict:
+def verify_container(image_tag: str, checkpoints_dir: Path, *, include_mobilenet: bool = False) -> dict:
     checkpoints_dir = Path(checkpoints_dir).resolve()
-    paths = {name: checkpoints_dir / name / "best_model.pth" for name in MODEL_NAMES}
+    model_names = (*MODEL_NAMES, "mobilenet_v3_small") if include_mobilenet else MODEL_NAMES
+    paths = {name: checkpoints_dir / name / "best_model.pth" for name in model_names}
     image = Image.new("L", (40, 30), color=80)
     stream = BytesIO()
     image.save(stream, format="PNG")
@@ -41,13 +42,15 @@ def verify_container(image_tag: str, checkpoints_dir: Path) -> dict:
         with path.open("rb") as source:
             hashes[name] = hashlib.file_digest(source, "sha256").hexdigest()
     container = "testiculus-smoke-" + uuid.uuid4().hex[:8]
+    extra_environment = (["-e", "MOBILENET_V3_SMALL_CHECKPOINT=/models/mobilenet_v3_small/best_model.pth"]
+                         if include_mobilenet else [])
     _docker(
         "run", "-d", "--rm", "--name", container, "--read-only",
         "--tmpfs", "/tmp:rw,noexec,nosuid,size=64m", "--health-interval=1s",
         "--health-start-period=5s", "-p", "127.0.0.1::8000",
         "--mount", f"type=bind,src={checkpoints_dir},dst=/models,readonly",
         "-e", "CUSTOM_CNN_CHECKPOINT=/models/custom_cnn/best_model.pth",
-        "-e", "RESNET18_CHECKPOINT=/models/resnet18/best_model.pth", image_tag,
+        "-e", "RESNET18_CHECKPOINT=/models/resnet18/best_model.pth", *extra_environment, image_tag,
     )
     try:
         details = json.loads(_docker("inspect", container))[0]
@@ -69,8 +72,8 @@ def verify_container(image_tag: str, checkpoints_dir: Path) -> dict:
                 time.sleep(1)
             else:
                 raise RuntimeError("Container did not become ready")
-            _require(set(response.json()["models"]) == set(MODEL_NAMES), "Not all trained models are ready")
-            for name in MODEL_NAMES:
+            _require(set(response.json()["models"]) == set(model_names), "Not all trained models are ready")
+            for name in model_names:
                 response = client.post(url + "/predict", params={"model_type": name}, files={
                     "file": ("synthetic.png", stream.getvalue(), "image/png"),
                 })
@@ -96,7 +99,7 @@ def verify_container(image_tag: str, checkpoints_dir: Path) -> dict:
         _docker("exec", container, "python", "-c", code)
         _docker("exec", container, "python", "-c",
                 "from PIL import Image; Image.new('L', (40,30), color=80).save('/tmp/synthetic.png')")
-        for name in MODEL_NAMES:
+        for name in model_names:
             output = json.loads(_docker(
                 "exec", container, "python", "-m", "src.gradcam", "--checkpoint",
                 f"/models/{name}/best_model.pth", "--image", "/tmp/synthetic.png",
@@ -126,8 +129,9 @@ def main() -> None:
     parser.add_argument("--image-tag", default="testiculus-inference:local")
     parser.add_argument("--checkpoints-dir", type=Path, default=Path("training_runs"))
     parser.add_argument("--output", type=Path, default=Path("artifacts/container_verification.json"))
+    parser.add_argument("--include-mobilenet", action="store_true")
     args = parser.parse_args()
-    report = verify_container(args.image_tag, args.checkpoints_dir)
+    report = verify_container(args.image_tag, args.checkpoints_dir, include_mobilenet=args.include_mobilenet)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     print(json.dumps({"verified": True, "report": str(args.output), "temporary_container_removed": True}))

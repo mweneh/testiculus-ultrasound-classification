@@ -1,0 +1,28 @@
+{
+  "verified": true,
+  "model_type": "mobilenet_v3_small",
+  "device": "cpu",
+  "cpu_threads": 1,
+  "checkpoint_sha256": "199afb1800167bb3c0242aa825ac78c5cbab9100c1a7d5cd2d78293a979bc43a",
+  "threshold_configuration_sha256": "162ec32cddb3b3c84c14c2c11cbe9692fe84800d3bd9e99c42c076bfd47a33dd",
+  "threshold": 0.5038942694664001,
+  "api_matches_cli": true,
+  "validation_sample": "the selected threshold candidate; no sample identity or image is copied into this report",
+  "validation_probability_absolute_difference": 1.1920928955078125e-07,
+  "validation_decision_matches_saved": true,
+  "validation_probability_tolerance": 1e-05,
+  "gradcam": {
+    "input_source": "synthetic grayscale pixels",
+    "target_layer": "features.12",
+    "finite": true,
+    "shape": [
+      224,
+      224
+    ],
+    "constant_map": false,
+    "predictions_unchanged": true,
+    "parameter_gradients_unchanged": true
+  },
+  "test_images_accessed": false,
+  "optimization_performed": false
+}
