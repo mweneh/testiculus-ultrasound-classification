@@ -1,0 +1,61 @@
+{
+  "experiment": "mobilenet_v3_small_frozen_backbone_cpu",
+  "status": "post-hoc exploratory extension; original test outcomes were already observed",
+  "created_before_training_utc": "2026-11-18T09:43:22.184268+00:00",
+  "original_test_outcomes_previously_observed": true,
+  "training_configuration": {
+    "model": "mobilenet_v3_small",
+    "pretrained_weights": "MobileNet_V3_Small_Weights.IMAGENET1K_V1",
+    "freeze_backbone": true,
+    "freeze_feature_batchnorm_statistics": true,
+    "optimizer": "AdamW",
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "batch_size": 16,
+    "max_epochs": 20,
+    "patience": 5,
+    "seed": 42,
+    "device": "cpu",
+    "threads": 2,
+    "num_workers": 0,
+    "scheduler": "ReduceLROnPlateau",
+    "scheduler_patience": 2,
+    "scheduler_factor": 0.5,
+    "class_weights": "inverse frequency from training labels only",
+    "checkpoint_selection": "minimum validation loss"
+  },
+  "manifest_sha256": {
+    "train": "a2c7329f6259d8a50f48f9ca084f3fe9fec4226e940b0be14ef442a6818898bc",
+    "validation": "c76eb4aeb5ae8da1bd67b4f9ecaf9679d8953d4c6d1e95e006aae7dc722d2b02"
+  },
+  "threshold_selection": {
+    "partition": "validation",
+    "objective": "maximize positive-class F1-score",
+    "candidate_thresholds": "every unique probability_class_1 score",
+    "prediction_rule": "probability_class_1 >= threshold",
+    "tie_break": "choose the highest threshold among equal maximum F1 scores"
+  },
+  "fine_tuning_policy": "Consider only on clear training/validation evidence before test evaluation; no automatic unfreezing and no tuning from test results.",
+  "test_policy": "Freeze checkpoint, preprocessing and validation threshold with hashes before exactly one MobileNet evaluation on the unchanged test manifest. No repeated test evaluation or tuning.",
+  "cpu_preflight": "reports/mobilenet_cpu_preflight.json",
+  "cpu_preflight_sha256": "1a8c7a30bc9c0219b240b7e78cdd089970ee35926e296bf992829309b265a650",
+  "original_artifact_sha256": {
+    "reports/validation_thresholds.json": "57c39b8495118a91946f54b9c888e1e08b0eaaa9f23ec35d76b668c6022b1349",
+    "reports/final_test_results.json": "d8c7e054a4cfbb0c1e4cb33003931d2d7db57be20f1314f2bb38df14d7a422d8",
+    "reports/experiment_summary.md": "6dad4e9fae1b0f9b357bc280e67ca83659028599c21b9652a5be02d4c24e360c",
+    "reports/artifact_verification.json": "0b8a00ec884442f4a1732a09628bc4c64f336f1bd420cb8b5cac29b6129746ce",
+    "reports/container_verification.json": "6a014cc87da8492f187cfc33df228162cf764b7afea372bfa0972685415c8250",
+    "training_runs/custom_cnn/best_model.pth": "10b56ec29c509f4b2f180a4d17b916c6c921245f88c4aa5d276b4cf29d47e04c",
+    "training_runs/custom_cnn/history.csv": "b50ef4f234162bb9790b88eb5fd77e2c08cb80fdd47747562f0794983d2d2702",
+    "results/custom_cnn_validation/metrics.json": "47dcb1855c19b299a82f87946932a121c7c9e26676fb4c7d2e3d2f76ab61cba5",
+    "results/custom_cnn_validation/predictions.csv": "5fb73cd7c959773cc0db9abf82486f9296f608691104ad9b79013edad59f60ff",
+    "results/custom_cnn_test/metrics.json": "9b1c9158291f57ecb64739e978ece04df095da3584c595e6d6a777ef3b974734",
+    "results/custom_cnn_test/predictions.csv": "b5d077f0325f9f6200f65ce5d652a1bd9754b0816d49f359c07000de02c6db5c",
+    "training_runs/resnet18/best_model.pth": "f6791f0707573674704a0ea2bd222d65591d709de6da8919e2dcbbae3744ace4",
+    "training_runs/resnet18/history.csv": "6828cdccac83b26ac1575615074dc5f808ef077204ae6b1b57cb0665e628d1c9",
+    "results/resnet18_validation/metrics.json": "8190e80086264f322163f4c2908fca9e4ea4e45cd533e18e8938973c92d60424",
+    "results/resnet18_validation/predictions.csv": "520988bc6b1ff2a3ba3d9cb54ed8f8e872b23e95ab1b84303b01957f25964562",
+    "results/resnet18_test/metrics.json": "0446d65ed49742bccde4b685bedcb52266f95c172a6fea6606afb69ab75c44a1",
+    "results/resnet18_test/predictions.csv": "4981d01d07ffcaad9240b526b416ba20b5a71fba842c4121d2a1d892453cc0ab"
+  }
+}

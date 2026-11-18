@@ -1,11 +1,15 @@
-"""Reproducible training for the custom CNN and ResNet18 classifiers."""
+"""Reproducible training, including the exploratory CPU MobileNet experiment."""
 
 from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
+import json
 import os
+import platform
 import random
+import time
 from pathlib import Path
 
 import numpy as np
@@ -101,9 +105,13 @@ def _preprocessing_metadata(model_type: str) -> dict:
 
 def _run_epoch(model: nn.Module, loader: DataLoader,
                criterion: nn.Module, device: torch.device,
-               optimizer: torch.optim.Optimizer | None = None) -> dict:
+               optimizer: torch.optim.Optimizer | None = None,
+               freeze_backbone: bool = False) -> dict:
     training = optimizer is not None
     model.train(training)
+    if freeze_backbone:
+        # requires_grad=False alone does not freeze BatchNorm running statistics.
+        model.features.eval()
     loss_total = 0.0
     correct = 0
     sample_count = 0
@@ -137,7 +145,7 @@ def _run_epoch(model: nn.Module, loader: DataLoader,
 def _write_history(history: list[dict], output_path: Path) -> None:
     fields = (
         "epoch", "train_loss", "train_accuracy", "validation_loss",
-        "validation_accuracy", "learning_rate",
+        "validation_accuracy", "learning_rate", "epoch_seconds",
     )
     with output_path.open("w", newline="", encoding="utf-8") as stream:
         writer = csv.DictWriter(stream, fieldnames=fields, lineterminator="\n")
@@ -189,18 +197,28 @@ def train_model(
     scheduler_patience: int = 2,
     device: str | torch.device = "auto",
     pretrained: bool = False,
+    freeze_backbone: bool = False,
 ) -> tuple[list[dict], Path]:
     """Train with weighted cross-entropy and validation-loss early stopping."""
-    if model_type not in ("custom_cnn", "resnet18"):
+    if model_type not in ("custom_cnn", "resnet18", "mobilenet_v3_small"):
         raise ValueError(f"Unsupported model type: {model_type}")
     if max_epochs < 1 or patience < 1:
         raise ValueError("max_epochs and patience must be positive")
     if learning_rate <= 0 or weight_decay < 0 or min_delta < 0:
         raise ValueError("Invalid optimizer or early-stopping configuration")
+    if freeze_backbone and model_type != "mobilenet_v3_small":
+        raise ValueError("Frozen-backbone training is supported for MobileNetV3-Small")
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    checkpoint_path = output_dir / "best_model.pth"
+    if checkpoint_path.exists() or (output_dir / "history.csv").exists():
+        raise FileExistsError("Refusing to overwrite an existing training experiment")
 
     seed_everything(seed)
     target_device = select_device(device)
     model.to(target_device)
+    if freeze_backbone:
+        model.features.requires_grad_(False)
     class_weights = torch.as_tensor(class_weights, dtype=torch.float32)
     if (
         class_weights.shape != (NUM_CLASSES,)
@@ -210,15 +228,13 @@ def train_model(
         raise ValueError("class_weights must contain two positive finite values")
     criterion = nn.CrossEntropyLoss(weight=class_weights.to(target_device))
     optimizer = torch.optim.AdamW(
-        model.parameters(), lr=learning_rate, weight_decay=weight_decay
+        [parameter for parameter in model.parameters() if parameter.requires_grad],
+        lr=learning_rate, weight_decay=weight_decay
     )
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="min", factor=0.5, patience=scheduler_patience
     )
 
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    checkpoint_path = output_dir / "best_model.pth"
     history = []
     best_validation_loss = float("inf")
     best_epoch = 0
@@ -233,11 +249,21 @@ def train_model(
         "scheduler": "ReduceLROnPlateau",
         "scheduler_patience": scheduler_patience,
         "device": str(target_device),
+        "freeze_backbone": freeze_backbone,
+        "batch_size": train_loader.batch_size,
+        "num_workers": train_loader.num_workers,
+        "cpu_threads": torch.get_num_threads(),
+        "pretrained_weights": (
+            "MobileNet_V3_Small_Weights.IMAGENET1K_V1"
+            if model_type == "mobilenet_v3_small" and pretrained else None
+        ),
     }
 
+    started = time.perf_counter()
     for epoch in range(1, max_epochs + 1):
+        epoch_started = time.perf_counter()
         train_stats = _run_epoch(
-            model, train_loader, criterion, target_device, optimizer
+            model, train_loader, criterion, target_device, optimizer, freeze_backbone
         )
         validation_stats = _run_epoch(
             model, validation_loader, criterion, target_device
@@ -251,6 +277,7 @@ def train_model(
             "validation_loss": validation_stats["loss"],
             "validation_accuracy": validation_stats["accuracy"],
             "learning_rate": learning_rate_now,
+            "epoch_seconds": time.perf_counter() - epoch_started,
         })
 
         if validation_stats["loss"] < best_validation_loss - min_delta:
@@ -264,10 +291,30 @@ def train_model(
         else:
             epochs_without_improvement += 1
 
+        _write_history(history, output_dir / "history.csv")
+        print(f"Epoch {epoch}: train_loss={train_stats['loss']:.6f} "
+              f"validation_loss={validation_stats['loss']:.6f} "
+              f"seconds={history[-1]['epoch_seconds']:.2f}", flush=True)
+
         if epochs_without_improvement >= patience:
             break
 
     _write_history(history, output_dir / "history.csv")
+    summary = {
+        "model_type": model_type, "device": str(target_device), "seed": seed,
+        "training_seconds": time.perf_counter() - started,
+        "epochs_completed": len(history), "best_epoch": best_epoch,
+        "best_validation_loss": best_validation_loss,
+        "parameters": sum(parameter.numel() for parameter in model.parameters()),
+        "trainable_parameters": sum(parameter.numel() for parameter in model.parameters() if parameter.requires_grad),
+        "class_weights": class_weights.tolist(),
+        "training_samples": len(train_loader.dataset),
+        "validation_samples": len(validation_loader.dataset),
+        "training_config": training_config,
+        "python_version": platform.python_version(), "torch_version": str(torch.__version__),
+        "epoch_seconds": [row["epoch_seconds"] for row in history],
+    }
+    (output_dir / "training_summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     return history, checkpoint_path
 
 
@@ -285,6 +332,8 @@ def load_checkpoint(checkpoint_path: Path,
     # never needs to download ImageNet initialization again.
     model = _build_model(model_type, pretrained=False)
     model.load_state_dict(checkpoint["model_state_dict"])
+    if model_type == "mobilenet_v3_small" and checkpoint.get("training_config", {}).get("freeze_backbone"):
+        model.features.requires_grad_(False)
     model.to(target_device)
     model.eval()
     return model, checkpoint
@@ -298,21 +347,35 @@ def _seed_worker(worker_id: int) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", choices=("custom_cnn", "resnet18"), required=True)
+    parser.add_argument("--model", choices=("custom_cnn", "resnet18", "mobilenet_v3_small"), required=True)
     parser.add_argument("--data-dir", type=Path, default=Path("data/raw"))
     parser.add_argument("--split-dir", type=Path, default=Path("data/splits"))
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--epochs", type=int, default=50)
-    parser.add_argument("--batch-size", type=int, default=32)
-    parser.add_argument("--patience", type=int, default=7)
-    parser.add_argument("--learning-rate", type=float, default=1e-3)
+    parser.add_argument("--epochs", type=int)
+    parser.add_argument("--batch-size", type=int)
+    parser.add_argument("--patience", type=int)
+    parser.add_argument("--learning-rate", type=float)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--num-workers", type=int, default=0)
-    parser.add_argument("--pretrained", action="store_true")
+    parser.add_argument("--pretrained", action=argparse.BooleanOptionalAction, default=None)
+    parser.add_argument("--freeze-backbone", action=argparse.BooleanOptionalAction, default=None)
+    parser.add_argument("--device", default=None)
+    parser.add_argument("--threads", type=int)
     args = parser.parse_args()
-    if args.pretrained and args.model != "resnet18":
-        parser.error("--pretrained is only available with --model resnet18")
+    mobile = args.model == "mobilenet_v3_small"
+    for field, default in {"epochs": 20 if mobile else 50, "batch_size": 16 if mobile else 32,
+                           "patience": 5 if mobile else 7, "learning_rate": 1e-4 if mobile else 1e-3,
+                           "device": "cpu" if mobile else "auto", "pretrained": mobile,
+                           "freeze_backbone": mobile}.items():
+        if getattr(args, field) is None:
+            setattr(args, field, default)
+    if args.threads is not None:
+        if args.threads < 1:
+            parser.error("threads must be positive")
+        torch.set_num_threads(args.threads)
+    if args.pretrained and args.model == "custom_cnn":
+        parser.error("The custom CNN does not support --pretrained")
     if args.batch_size < 1 or args.num_workers < 0:
         parser.error("batch size must be positive and workers nonnegative")
 
@@ -359,7 +422,16 @@ def main() -> None:
         max_epochs=args.epochs,
         patience=args.patience,
         pretrained=args.pretrained,
+        freeze_backbone=args.freeze_backbone,
+        device=args.device,
     )
+    summary_path = args.output_dir / "training_summary.json"
+    summary = json.loads(summary_path.read_text())
+    summary["manifest_sha256"] = {
+        name: hashlib.sha256((args.split_dir / f"{name}.csv").read_bytes()).hexdigest()
+        for name in ("train", "validation")
+    }
+    summary_path.write_text(json.dumps(summary, indent=2) + "\n")
     print(f"Training stopped after {len(history)} epochs.")
     print(f"Best checkpoint: {checkpoint_path}")
     print(f"History: {args.output_dir / 'history.csv'}")
