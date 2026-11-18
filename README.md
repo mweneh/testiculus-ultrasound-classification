@@ -16,8 +16,11 @@ selection from final test results. The complete validation record is preserved
 unchanged in [validation_thresholds.json](reports/validation_thresholds.json);
 [final_test_results.json](reports/final_test_results.json) preserves the supplied
 test summaries and their provenance at import. Original trained weights and
-detailed artifacts are now available locally under ignored `training_runs/`
-and `results/`, copied from `MyDrive/Capstone/`. The aggregate
+detailed artifacts were originally supplied from `MyDrive/Capstone/` and are
+available locally under ignored `training_runs/` and `results/`. The chosen
+distribution channel for all three final checkpoints is **GitHub Releases**;
+the [local release package](release/README.md) is prepared but not published.
+The aggregate
 [verification report](reports/artifact_verification.json) records source hashes,
 full-precision metrics, checkpoint metadata and successful trained-model checks.
 Weights, prediction rows and medical images remain outside Git.
@@ -450,11 +453,12 @@ fine-tuning. The Colab checkpoint records `pretrained_initialization: true`,
 but does not record the original Torchvision version or pretrained-file hash;
 the precise original download cannot be independently authenticated.
 
-The trained ultrasound classifiers are the developer-supplied
+The original trained ultrasound classifiers are the developer-supplied
 `training_runs/custom_cnn/best_model.pth` and
 `training_runs/resnet18/best_model.pth` above. They are not distributed in Git
-or the Docker image, and there is no automatic checkpoint download. Obtain
-them separately from the project developer. Inference restores these complete
+or the Docker image. GitHub Release installation and the optional pinned
+downloader are documented below; Google Drive describes their historical
+source, rather than the distribution mechanism. Inference restores these complete
 trained checkpoints with `pretrained=False`; it does not download ImageNet
 weights. Preprocessing follows the recorded ultrasound-training transforms,
 including direct 224×224 resizing, rather than the default ImageNet crop recipe.
@@ -464,7 +468,7 @@ trained locally for the documented exploratory extension, initialized from
 Torchvision's `MobileNet_V3_Small_Weights.IMAGENET1K_V1`. Its source, configuration
 and weight hashes are preserved in
 [the exploratory record](reports/mobilenet_exploratory_results.json); it is also
-excluded from Git and must be supplied separately for deployment.
+excluded from Git and included in the prepared GitHub Release package.
 
 The downloaded threshold file is byte-identical to the unchanged tracked record.
 Checkpoint, history, metric and prediction-file hashes are recorded in
@@ -488,6 +492,85 @@ level and does not establish patient or centre independence.
 Only aggregate experiment records and documentation are tracked. Raw data,
 checkpoints, `training_runs/`, `artifacts/`, Colab-style `results/`, and `.env`
 remain ignored; do not commit medical images, prediction CSVs or credentials.
+
+## Checkpoint installation from GitHub Releases
+
+Release tag **`models-v1.0.0`** is prepared locally and **has not been published**.
+Downloads become available only after redistribution review and explicit
+authorization to publish. Until then, these commands may report that the
+release is unavailable. See [release assets and publication commands](release/README.md),
+[pinned manifest](release/manifest.json), [SHA-256 checksums](release/SHA256SUMS)
+and [weight redistribution review](release/WEIGHT_NOTICES.md).
+
+After publication, the optional downloader uses only Python's standard library
+and the exact repository/tag/assets in the checked-out manifest:
+
+```bash
+python3 -m src.release_assets download
+```
+
+It downloads into a temporary directory, verifies byte sizes and SHA-256 hashes
+against the trusted manifest in this source checkout, and installs the complete
+package to `artifacts/checkpoints/models-v1.0.0/`. It refuses an existing
+destination and never replaces the original `training_runs/` checkpoints or
+tracked threshold configurations. Use a trusted checkout corresponding to the
+release; hashes establish byte consistency, not an independent signature.
+Public GitHub URLs are used without credentials. For a private/draft release,
+an authorized maintainer can download with GitHub CLI, then use the same local
+verification command.
+
+With the [serving environment](#fastapi-application) installed, verify all three
+models load on CPU (no model inference or dataset access):
+
+```bash
+OMP_NUM_THREADS=1 python -m src.release_assets verify \
+  --package artifacts/checkpoints/models-v1.0.0
+```
+
+Alternatively, add `--verify-load` to the download command when the ML runtime
+is already installed. Files are complete trained PyTorch checkpoints; restoring
+them does not fetch ImageNet initialization weights. Preserve both threshold
+JSON files, including their full validation records.
+
+Run inference on an explicitly supplied research image, using the matching
+packaged configuration:
+
+```bash
+CHECKPOINT_DIR=artifacts/checkpoints/models-v1.0.0
+python -m src.inference --device cpu \
+  --checkpoint "$CHECKPOINT_DIR/testiculus-custom-cnn-v1.pth" \
+  --threshold-config "$CHECKPOINT_DIR/validation_thresholds.json" \
+  --image /path/to/image.png
+python -m src.inference --device cpu \
+  --checkpoint "$CHECKPOINT_DIR/testiculus-resnet18-v1.pth" \
+  --threshold-config "$CHECKPOINT_DIR/validation_thresholds.json" \
+  --image /path/to/image.png
+python -m src.inference --device cpu \
+  --checkpoint "$CHECKPOINT_DIR/testiculus-mobilenet-v3-small-v1.pth" \
+  --threshold-config "$CHECKPOINT_DIR/mobilenet_v3_small_thresholds.json" \
+  --image /path/to/image.png
+```
+
+For FastAPI, point each checkpoint environment variable at its installed asset
+and allow the existing per-model threshold lookup. The tracked configurations
+are byte-identical to the packaged versions:
+
+```bash
+export CUSTOM_CNN_CHECKPOINT="$PWD/$CHECKPOINT_DIR/testiculus-custom-cnn-v1.pth"
+export RESNET18_CHECKPOINT="$PWD/$CHECKPOINT_DIR/testiculus-resnet18-v1.pth"
+export MOBILENET_V3_SMALL_CHECKPOINT="$PWD/$CHECKPOINT_DIR/testiculus-mobilenet-v3-small-v1.pth"
+unset THRESHOLD_CONFIG
+export DEVICE=cpu
+uvicorn src.api:app --host 127.0.0.1 --port 8000
+```
+
+The intended use is noncommercial research. Original TesticulUS images and
+image adaptations remain under CC BY-NC-SA 4.0 with both mandatory citations.
+Torchvision's BSD software notice does not by itself settle pretrained-weight
+rights. The applicable licence for the trained parameter files, potential
+dataset ShareAlike obligations and ImageNet-derived redistribution terms still
+require owner review; no blanket checkpoint or repository software licence is
+asserted. See the [source-linked notices](release/WEIGHT_NOTICES.md).
 
 ## Single-image inference
 
@@ -740,10 +823,22 @@ BatchNorm preservation, CPU timing, checkpoint, preprocessing, validation
 selection, API, Grad-CAM and single-evaluation safeguards. Its complete test run
 uses `python -m pytest -q`, including the legacy synthetic-training test and
 the new synthetic MobileNet optimization test. These train fresh temporary
-models only; the original research checkpoints are not retrained. The current
-full suite has **150 passed**, with one Starlette TestClient deprecation warning
+models only; the original research checkpoints are not retrained. That development
+run had **150 passed**, with one Starlette TestClient deprecation warning
 and no deselections. The earlier exclusion and 128/129 counts above describe
 the initial frozen two-model application phase.
+
+Release preparation adds **18 passing tests** in `tests/test_release_assets.py`,
+including strict loading of the available final checkpoints, deterministic
+package construction, checksum enforcement, mocked GitHub downloads and failure
+cleanup. They perform no training, model forward passes or held-out evaluation.
+The original-checkpoint check skips when weights are absent in a source-only
+checkout. Four report-specific tests were added separately after the historical
+150-test run. Run the release checks with:
+
+```bash
+OMP_NUM_THREADS=1 python -m pytest -q tests/test_release_assets.py
+```
 
 ## Repository layout
 

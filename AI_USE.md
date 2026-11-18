@@ -166,3 +166,32 @@ Grad-CAM outputs were available for scientific interpretation. The supplied
 dataset BibTeX entries are preserved, with a publisher-pagination discrepancy
 flagged for author review. The student remains responsible for the final
 argument, references, institutional requirements and submitted document.
+
+## GitHub Release checkpoint packaging
+
+The assistant prepared local GitHub Release assets and a pinned source manifest
+for the three existing final checkpoints, plus byte-identical copies of both
+frozen threshold configurations. It added deterministic copy/checksum tooling,
+strict CPU checkpoint-load verification, an optional standard-library public
+GitHub downloader, release notes, dataset citations and source-linked
+redistribution notices. Tests use mocked downloads and temporary synthetic
+byte fixtures; a separate test strictly loads the available final checkpoints
+without running their forward methods or downloading initialization weights.
+
+All 18 release-tooling tests passed. Original checkpoint hashes were checked
+against the frozen verification/freeze/benchmark records; checkpoint and
+preprocessing metadata, finite states, class mappings, parameter counts and
+threshold lookup were verified. No training, model forward pass, ultrasound
+image access, test evaluation or threshold change occurred during packaging.
+The assistant documented historical Google Drive provenance separately from
+the planned GitHub Release distribution channel. Binary checkpoints remain
+ignored and outside ordinary Git commits.
+
+The assistant checked primary Torchvision/software licence and dataset sources.
+Torchvision warns that pretrained models can carry additional dataset-derived
+terms. ImageNet terms pages could not be retrieved; the scope of checkpoint
+licensing, dataset ShareAlike treatment and pretrained-weight redistribution
+remains for owner review. No blanket checkpoint/software licence was invented.
+No GitHub Release, remote tag or push was created. Live release downloading
+cannot be verified until an authorized release exists; download success and
+failure handling were tested with mocked HTTPS responses.
