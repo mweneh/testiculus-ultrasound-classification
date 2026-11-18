@@ -1,0 +1,63 @@
+{
+  "format_version": 1,
+  "verified": true,
+  "image_tag": "testiculus-inference:local",
+  "image_id": "sha256:eefcc92d52dbf99b3d1ffe8b44dfd4e2aeaf6f3b0940f3722ba44ea1c8115a6a",
+  "inputs": "synthetic grayscale image; original trained checkpoints",
+  "training_performed": false,
+  "test_images_accessed": false,
+  "non_root_user": "10001:10001",
+  "root_filesystem_read_only": true,
+  "checkpoints_mounted_read_only": true,
+  "health_check_passed": true,
+  "excluded_artifact_directories_absent_from_image": true,
+  "invalid_upload_rejected": true,
+  "models": {
+    "custom_cnn": {
+      "checkpoint_sha256": "10b56ec29c509f4b2f180a4d17b916c6c921245f88c4aa5d276b4cf29d47e04c",
+      "api": {
+        "model_type": "custom_cnn",
+        "positive_class": 1,
+        "probability_class_1": 0.7111382484436035,
+        "prediction": 1,
+        "class_name": "inhomogeneous",
+        "threshold": 0.4541136622428894,
+        "threshold_source": "validation_configuration"
+      },
+      "local_probability_absolute_difference": 0.0,
+      "gradcam": {
+        "target_class": 1,
+        "target_layer": "features.12",
+        "score": "pre-softmax class logit",
+        "constant_map": false,
+        "input_heatmap_shape": [
+          224,
+          224
+        ]
+      }
+    },
+    "resnet18": {
+      "checkpoint_sha256": "f6791f0707573674704a0ea2bd222d65591d709de6da8919e2dcbbae3744ace4",
+      "api": {
+        "model_type": "resnet18",
+        "positive_class": 1,
+        "probability_class_1": 0.42134127020835876,
+        "prediction": 1,
+        "class_name": "inhomogeneous",
+        "threshold": 0.3251684010028839,
+        "threshold_source": "validation_configuration"
+      },
+      "local_probability_absolute_difference": 0.0,
+      "gradcam": {
+        "target_class": 1,
+        "target_layer": "layer4.1",
+        "score": "pre-softmax class logit",
+        "constant_map": false,
+        "input_heatmap_shape": [
+          224,
+          224
+        ]
+      }
+    }
+  }
+}

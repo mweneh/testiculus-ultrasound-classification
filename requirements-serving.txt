@@ -1,0 +1,9 @@
+# Versions used for synthetic application verification, not the Colab research environment.
+-r requirements-api.txt
+torch==2.14.1
+torchvision==0.29.1
+numpy==2.5.4
+pandas==3.0.6
+Pillow==13.0.0
+pydantic==2.13.4
+anyio==4.15.1

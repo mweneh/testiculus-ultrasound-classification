@@ -1,0 +1,11 @@
+# Allow only source, serving requirements and frozen decision configuration.
+**
+!Dockerfile
+!requirements-api.txt
+!requirements-serving.txt
+!src/
+!src/**
+!reports/
+!reports/validation_thresholds.json
+**/__pycache__/
+**/*.pyc
