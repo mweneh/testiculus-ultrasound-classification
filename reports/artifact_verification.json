@@ -1,0 +1,448 @@
+{
+  "format_version": 1,
+  "verified": true,
+  "threshold_configuration_sha256": "57c39b8495118a91946f54b9c888e1e08b0eaaa9f23ec35d76b668c6022b1349",
+  "user_supplied_summary_sha256": "d8c7e054a4cfbb0c1e4cb33003931d2d7db57be20f1314f2bb38df14d7a422d8",
+  "downloaded_threshold_record_byte_identical": true,
+  "validation_selection": {
+    "validation_manifest_sha256_verified": true,
+    "models": {
+      "custom_cnn": {
+        "selected_threshold": 0.4541136622428894,
+        "n_validation_samples": 129,
+        "recorded_sweep_verified": true,
+        "source_predictions_verified": true
+      },
+      "resnet18": {
+        "selected_threshold": 0.3251684010028839,
+        "n_validation_samples": 129,
+        "recorded_sweep_verified": true,
+        "source_predictions_verified": true
+      }
+    }
+  },
+  "safeguards": {
+    "training_performed": false,
+    "thresholds_changed": false,
+    "test_images_accessed": false,
+    "test_manifest_accessed": false,
+    "test_model_evaluation_rerun": false
+  },
+  "verification_environment": {
+    "torch": "2.14.1+cpu",
+    "torchvision": "0.29.1+cpu",
+    "numpy": "2.5.4",
+    "pandas": "3.0.6",
+    "Pillow": "13.0.0",
+    "scikit-learn": "1.8.0",
+    "fastapi": "0.163.1"
+  },
+  "concerns": [
+    {
+      "model_type": "custom_cnn",
+      "artifact": "results/custom_cnn_validation/metrics.json",
+      "issue": "Original validation majority baseline differs from the evaluated partition; model metrics and frozen threshold selection are unaffected. Original file preserved.",
+      "discrepancies": {
+        "majority_class_baseline_accuracy": {
+          "recorded": 0.8093023255813954,
+          "recomputed_from_partition": 0.8062015503875969
+        }
+      }
+    },
+    {
+      "model_type": "resnet18",
+      "artifact": "results/resnet18_validation/metrics.json",
+      "issue": "Original validation majority baseline differs from the evaluated partition; model metrics and frozen threshold selection are unaffected. Original file preserved.",
+      "discrepancies": {
+        "majority_class_baseline_accuracy": {
+          "recorded": 0.8093023255813954,
+          "recomputed_from_partition": 0.8062015503875969
+        }
+      }
+    }
+  ],
+  "models": {
+    "custom_cnn": {
+      "supplied_test_summary": {
+        "verified": true,
+        "sha256": "9b1c9158291f57ecb64739e978ece04df095da3584c595e6d6a777ef3b974734"
+      },
+      "test_predictions": {
+        "predictions_sha256": "b5d077f0325f9f6200f65ce5d652a1bd9754b0816d49f359c07000de02c6db5c",
+        "metrics_sha256": "9b1c9158291f57ecb64739e978ece04df095da3584c595e6d6a777ef3b974734",
+        "n_samples": 129,
+        "class_counts": {
+          "0": 104,
+          "1": 25
+        },
+        "sample_paths_and_labels_sha256": "f2bb50577777be674f85491bd59f3cefc465ed7b00668400fb8c69f47d35231a",
+        "all_metrics_reproduced": true,
+        "model_metrics_reproduced": true,
+        "discrepancies": {},
+        "metrics": {
+          "positive_class": 1,
+          "threshold": 0.4541136622428894,
+          "majority_class_baseline_accuracy": 0.8062015503875969,
+          "roc_auc": 0.6123076923076923,
+          "average_precision": 0.402871479368571,
+          "accuracy": 0.6124031007751938,
+          "balanced_accuracy": 0.5317307692307692,
+          "precision": 0.2222222222222222,
+          "recall_sensitivity": 0.4,
+          "specificity": 0.6634615384615384,
+          "f1": 0.2857142857142857,
+          "confusion_matrix": {
+            "labels": [
+              0,
+              1
+            ],
+            "rows_actual_columns_predicted": [
+              [
+                69,
+                35
+              ],
+              [
+                15,
+                10
+              ]
+            ],
+            "tn": 69,
+            "fp": 35,
+            "fn": 15,
+            "tp": 10
+          },
+          "undefined_metrics": []
+        }
+      },
+      "validation_predictions": {
+        "predictions_sha256": "5fb73cd7c959773cc0db9abf82486f9296f608691104ad9b79013edad59f60ff",
+        "metrics_sha256": "47dcb1855c19b299a82f87946932a121c7c9e26676fb4c7d2e3d2f76ab61cba5",
+        "n_samples": 129,
+        "class_counts": {
+          "0": 104,
+          "1": 25
+        },
+        "sample_paths_and_labels_sha256": "aa3e4ac48c9a2ed35652b71b056c1c944cc9116879e3d111f39e75570079729a",
+        "all_metrics_reproduced": false,
+        "model_metrics_reproduced": true,
+        "discrepancies": {
+          "majority_class_baseline_accuracy": {
+            "recorded": 0.8093023255813954,
+            "recomputed_from_partition": 0.8062015503875969
+          }
+        },
+        "metrics": {
+          "positive_class": 1,
+          "threshold": 0.5,
+          "majority_class_baseline_accuracy": 0.8093023255813954,
+          "roc_auc": 0.7061538461538461,
+          "average_precision": 0.319494148637612,
+          "accuracy": 0.7131782945736435,
+          "balanced_accuracy": 0.5030769230769231,
+          "precision": 0.2,
+          "recall_sensitivity": 0.16,
+          "specificity": 0.8461538461538461,
+          "f1": 0.17777777777777778,
+          "confusion_matrix": {
+            "labels": [
+              0,
+              1
+            ],
+            "rows_actual_columns_predicted": [
+              [
+                88,
+                16
+              ],
+              [
+                21,
+                4
+              ]
+            ],
+            "tn": 88,
+            "fp": 16,
+            "fn": 21,
+            "tp": 4
+          },
+          "undefined_metrics": []
+        }
+      },
+      "checkpoint_sha256": "10b56ec29c509f4b2f180a4d17b916c6c921245f88c4aa5d276b4cf29d47e04c",
+      "checkpoint_metadata": {
+        "format_version": 1,
+        "model_type": "custom_cnn",
+        "architecture": "CustomCNN",
+        "num_classes": 2,
+        "pretrained_initialization": false,
+        "class_to_idx": {
+          "homogeneous": 0,
+          "inhomogeneous": 1
+        },
+        "preprocessing": {
+          "model_type": "custom_cnn",
+          "input_size": [
+            224,
+            224
+          ],
+          "resize": "bilinear",
+          "source_image_mode": "grayscale",
+          "value_range": [
+            0.0,
+            1.0
+          ],
+          "input_channels": 1,
+          "training_augmentation": [
+            "RandomHorizontalFlip(p=0.5)",
+            "RandomRotation(degrees=10)"
+          ],
+          "evaluation_augmentation": []
+        },
+        "seed": 42,
+        "best_epoch": 8,
+        "best_validation_loss": 0.5784224724584772,
+        "class_weights": [
+          0.6168032288551331,
+          2.640350818634033
+        ],
+        "training_config": {
+          "optimizer": "AdamW",
+          "learning_rate": 0.001,
+          "weight_decay": 0.0001,
+          "max_epochs": 50,
+          "early_stopping_patience": 7,
+          "early_stopping_min_delta": 0.0,
+          "scheduler": "ReduceLROnPlateau",
+          "scheduler_patience": 2,
+          "device": "cuda"
+        }
+      },
+      "history_sha256": "b50ef4f234162bb9790b88eb5fd77e2c08cb80fdd47747562f0794983d2d2702",
+      "epochs_completed": 15,
+      "checkpoint_loads": true,
+      "preprocessing_metadata_matches": true,
+      "sampled_validation_inference": {
+        "checked": true,
+        "n_samples": 2,
+        "classes_sampled": [
+          0,
+          1
+        ],
+        "probability_absolute_tolerance": 1e-05,
+        "max_absolute_probability_difference": 2.086162567138672e-07,
+        "frozen_threshold_decisions_match": true
+      },
+      "gradcam": {
+        "verified": true,
+        "input": "synthetic grayscale pattern",
+        "target_layer": "features.12",
+        "heatmap_shape": [
+          224,
+          224
+        ],
+        "finite_normalized": true,
+        "prediction_unchanged": true,
+        "parameter_gradients_unchanged": true,
+        "constant_map": false
+      }
+    },
+    "resnet18": {
+      "supplied_test_summary": {
+        "verified": true,
+        "sha256": "0446d65ed49742bccde4b685bedcb52266f95c172a6fea6606afb69ab75c44a1"
+      },
+      "test_predictions": {
+        "predictions_sha256": "4981d01d07ffcaad9240b526b416ba20b5a71fba842c4121d2a1d892453cc0ab",
+        "metrics_sha256": "0446d65ed49742bccde4b685bedcb52266f95c172a6fea6606afb69ab75c44a1",
+        "n_samples": 129,
+        "class_counts": {
+          "0": 104,
+          "1": 25
+        },
+        "sample_paths_and_labels_sha256": "f2bb50577777be674f85491bd59f3cefc465ed7b00668400fb8c69f47d35231a",
+        "all_metrics_reproduced": true,
+        "model_metrics_reproduced": true,
+        "discrepancies": {},
+        "metrics": {
+          "positive_class": 1,
+          "threshold": 0.3251684010028839,
+          "majority_class_baseline_accuracy": 0.8062015503875969,
+          "roc_auc": 0.7473076923076922,
+          "average_precision": 0.5219602746865049,
+          "accuracy": 0.6434108527131783,
+          "balanced_accuracy": 0.6421153846153846,
+          "precision": 0.3018867924528302,
+          "recall_sensitivity": 0.64,
+          "specificity": 0.6442307692307693,
+          "f1": 0.41025641025641024,
+          "confusion_matrix": {
+            "labels": [
+              0,
+              1
+            ],
+            "rows_actual_columns_predicted": [
+              [
+                67,
+                37
+              ],
+              [
+                9,
+                16
+              ]
+            ],
+            "tn": 67,
+            "fp": 37,
+            "fn": 9,
+            "tp": 16
+          },
+          "undefined_metrics": []
+        }
+      },
+      "validation_predictions": {
+        "predictions_sha256": "520988bc6b1ff2a3ba3d9cb54ed8f8e872b23e95ab1b84303b01957f25964562",
+        "metrics_sha256": "8190e80086264f322163f4c2908fca9e4ea4e45cd533e18e8938973c92d60424",
+        "n_samples": 129,
+        "class_counts": {
+          "0": 104,
+          "1": 25
+        },
+        "sample_paths_and_labels_sha256": "aa3e4ac48c9a2ed35652b71b056c1c944cc9116879e3d111f39e75570079729a",
+        "all_metrics_reproduced": false,
+        "model_metrics_reproduced": true,
+        "discrepancies": {
+          "majority_class_baseline_accuracy": {
+            "recorded": 0.8093023255813954,
+            "recomputed_from_partition": 0.8062015503875969
+          }
+        },
+        "metrics": {
+          "positive_class": 1,
+          "threshold": 0.5,
+          "majority_class_baseline_accuracy": 0.8093023255813954,
+          "roc_auc": 0.691923076923077,
+          "average_precision": 0.3456833513882482,
+          "accuracy": 0.8062015503875969,
+          "balanced_accuracy": 0.5911538461538461,
+          "precision": 0.5,
+          "recall_sensitivity": 0.24,
+          "specificity": 0.9423076923076923,
+          "f1": 0.32432432432432434,
+          "confusion_matrix": {
+            "labels": [
+              0,
+              1
+            ],
+            "rows_actual_columns_predicted": [
+              [
+                98,
+                6
+              ],
+              [
+                19,
+                6
+              ]
+            ],
+            "tn": 98,
+            "fp": 6,
+            "fn": 19,
+            "tp": 6
+          },
+          "undefined_metrics": []
+        }
+      },
+      "checkpoint_sha256": "f6791f0707573674704a0ea2bd222d65591d709de6da8919e2dcbbae3744ace4",
+      "checkpoint_metadata": {
+        "format_version": 1,
+        "model_type": "resnet18",
+        "architecture": "ResNet18",
+        "num_classes": 2,
+        "pretrained_initialization": true,
+        "class_to_idx": {
+          "homogeneous": 0,
+          "inhomogeneous": 1
+        },
+        "preprocessing": {
+          "model_type": "resnet18",
+          "input_size": [
+            224,
+            224
+          ],
+          "resize": "bilinear",
+          "source_image_mode": "grayscale",
+          "value_range": [
+            0.0,
+            1.0
+          ],
+          "input_channels": 3,
+          "training_augmentation": [
+            "RandomHorizontalFlip(p=0.5)",
+            "RandomRotation(degrees=10)"
+          ],
+          "evaluation_augmentation": [],
+          "grayscale_conversion": "3-channel",
+          "normalization_mean": [
+            0.485,
+            0.456,
+            0.406
+          ],
+          "normalization_std": [
+            0.229,
+            0.224,
+            0.225
+          ]
+        },
+        "seed": 42,
+        "best_epoch": 7,
+        "best_validation_loss": 0.5193695051725521,
+        "class_weights": [
+          0.6168032288551331,
+          2.640350818634033
+        ],
+        "training_config": {
+          "optimizer": "AdamW",
+          "learning_rate": 0.001,
+          "weight_decay": 0.0001,
+          "max_epochs": 50,
+          "early_stopping_patience": 7,
+          "early_stopping_min_delta": 0.0,
+          "scheduler": "ReduceLROnPlateau",
+          "scheduler_patience": 2,
+          "device": "cuda"
+        }
+      },
+      "history_sha256": "6828cdccac83b26ac1575615074dc5f808ef077204ae6b1b57cb0665e628d1c9",
+      "epochs_completed": 14,
+      "checkpoint_loads": true,
+      "preprocessing_metadata_matches": true,
+      "sampled_validation_inference": {
+        "checked": true,
+        "n_samples": 2,
+        "classes_sampled": [
+          0,
+          1
+        ],
+        "probability_absolute_tolerance": 1e-05,
+        "max_absolute_probability_difference": 1.7881393432617188e-07,
+        "frozen_threshold_decisions_match": true
+      },
+      "gradcam": {
+        "verified": true,
+        "input": "synthetic grayscale pattern",
+        "target_layer": "layer4.1",
+        "heatmap_shape": [
+          224,
+          224
+        ],
+        "finite_normalized": true,
+        "prediction_unchanged": true,
+        "parameter_gradients_unchanged": true,
+        "constant_map": false
+      }
+    }
+  },
+  "identical_test_sample_paths_and_labels": true,
+  "api": {
+    "checked": true,
+    "both_trained_models_load": true,
+    "api_cli_probability_and_decision_agreement": true,
+    "input_partition": "validation"
+  }
+}

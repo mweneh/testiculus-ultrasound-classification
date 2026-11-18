@@ -12,6 +12,7 @@ from src.threshold_config import DEFAULT_THRESHOLD_CONFIG, load_threshold_config
 
 
 DEFAULT_TEST_RESULTS = DEFAULT_THRESHOLD_CONFIG.with_name("final_test_results.json")
+DEFAULT_VERIFICATION = DEFAULT_THRESHOLD_CONFIG.with_name("artifact_verification.json")
 TEST_METRICS = (
     "roc_auc", "average_precision", "accuracy", "balanced_accuracy",
     "recall_sensitivity", "specificity", "f1",
@@ -102,16 +103,53 @@ def verify_metrics_artifact(results: dict, model_type: str, artifact_path: Path)
     return {"verified": True, "sha256": hashlib.sha256(raw).hexdigest()}
 
 
-def render_summary(results: dict, validation: dict) -> str:
+def load_verification_report(path: Path = DEFAULT_VERIFICATION) -> dict | None:
+    """Use aggregate verification evidence only when it matches both frozen records."""
+    path = Path(path)
+    if not path.is_file():
+        return None
+    report = json.loads(path.read_text(encoding="utf-8"))
+    if report.get("verified") is not True or report.get("format_version") != 1:
+        raise ValueError("Expected a successful version-1 artifact verification report")
+    for field, source in (
+        ("threshold_configuration_sha256", DEFAULT_THRESHOLD_CONFIG),
+        ("user_supplied_summary_sha256", DEFAULT_TEST_RESULTS),
+    ):
+        if report[field] != hashlib.sha256(source.read_bytes()).hexdigest():
+            raise ValueError(f"Verification report {field} is stale")
+    return report
+
+
+def render_summary(results: dict, validation: dict, verification: dict | None = None) -> str:
     lines = [
         "# Frozen experiment summary", "",
         "Both models completed training, validation threshold selection and final",
         "held-out test evaluation in Google Colab. Experiments are frozen.", "",
         "Test numbers below were supplied by the project developer, rounded to four",
-        "decimal places. Original Colab test artifacts and checkpoints are unavailable",
-        "locally and remain unverified. Count-based metrics agree with the supplied",
-        "confusion matrices at the reported precision. ROC-AUC and average precision",
-        "cannot be reconstructed from confusion matrices.", "",
+        "decimal places. Count-based metrics agree with the supplied confusion",
+        "matrices at that precision. The original rounded summary is preserved",
+        "with its status at import; subsequent verification evidence is separate.", "",
+    ]
+    if verification is None:
+        lines += [
+            "Original Colab artifacts remain unverified. ROC-AUC and average precision",
+            "cannot be reconstructed from confusion matrices alone.", "",
+        ]
+    else:
+        lines += [
+            "Original test metric JSONs and prediction CSVs have been cross-checked.",
+            "All full-precision test metrics, including ROC-AUC and average precision,",
+            "reproduce from the saved probabilities at the frozen thresholds. Both",
+            "models have identical test paths and labels. No held-out image inference",
+            "or training was performed. Source hashes and complete original metrics",
+            "are preserved in `reports/artifact_verification.json`.", "",
+            "Both original validation metric JSONs record majority baseline 0.8093023",
+            "(696/860), rather than the partition's 0.8062016 (104/129). Original files",
+            "are preserved and this discrepancy is flagged. Model metrics and the",
+            "frozen threshold selection reproduce; the threshold JSON and final test",
+            "artifacts already contain the correct partition baseline.", "",
+        ]
+    lines += [
         "## Validation: threshold selection", "",
         "Source: `reports/validation_thresholds.json` (full precision, unchanged).",
         "Maximize positive-class F1 over unique validation probabilities; use `>=`",
@@ -124,6 +162,25 @@ def render_summary(results: dict, validation: dict) -> str:
         m = record["metrics_at_selected_threshold"]
         lines.append(f"| {name} | {record['selected_threshold']} | {m['precision']:.4f} | "
                      f"{m['recall_sensitivity']:.4f} | {m['specificity']:.4f} | {m['f1']:.4f} |")
+    if verification is not None:
+        lines += [
+            "", "Validation ranking metrics from the original prediction files",
+            "(independent of the classification threshold):", "",
+            "| Model | Validation ROC-AUC | Validation average precision |",
+            "|---|---:|---:|",
+        ]
+        for name, model in verification["models"].items():
+            metrics = model["validation_predictions"]["metrics"]
+            lines.append(f"| {name} | {metrics['roc_auc']:.4f} | {metrics['average_precision']:.4f} |")
+        lines += [
+            "", "Training history and selected checkpoints agree:", "",
+            "| Model | Epochs completed | Selected epoch | Best validation loss |",
+            "|---|---:|---:|---:|",
+        ]
+        for name, model in verification["models"].items():
+            metadata = model["checkpoint_metadata"]
+            lines.append(f"| {name} | {model['epochs_completed']} | {metadata['best_epoch']} | "
+                         f"{metadata['best_validation_loss']:.8f} |")
     lines += [
         "", "## Test: final frozen evaluation", "",
         "Both models used the same 129-image held-out set: 104 homogeneous (0),",
@@ -149,8 +206,13 @@ def render_summary(results: dict, validation: dict) -> str:
         "images, loading models, or reading test manifests. Supply original",
         "`src.evaluation` metrics.json files using `--custom-cnn-metrics` and/or",
         "`--resnet18-metrics` to cross-check them and print their SHA-256 hashes.",
-        "Original predictions are needed to independently recompute ROC-AUC/AP;",
-        "original checkpoint hashes and runtime versions remain unavailable.", "",
+        "`python -m src.artifact_verification --artifact-root . --data-dir data/raw",
+        "--check-api --output reports/artifact_verification.json` verifies downloaded",
+        "artifacts and trained-model inference, sampling validation images only.",
+        "Omit `--data-dir` to use synthetic inputs instead of medical images.",
+        "Checkpoint and artifact hashes fingerprint the supplied local copies; no",
+        "independent provider checksum is available. The original Colab package/",
+        "runtime versions remain unknown; the verification environment is recorded.", "",
         "Patient and acquisition-centre identifiers are unavailable. This is a",
         "provisional image-level evaluation, not verified patient-independent or",
         "centre-held-out validation. No clinical validation or diagnostic suitability",
@@ -166,6 +228,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--custom-cnn-metrics", type=Path)
     parser.add_argument("--resnet18-metrics", type=Path)
+    parser.add_argument("--verification", type=Path, default=DEFAULT_VERIFICATION)
     args = parser.parse_args()
     results, validation = load_experiment_results(args.results, args.threshold_config)
     checks = {}
@@ -174,7 +237,7 @@ def main() -> None:
             checks[name] = verify_metrics_artifact(results, name, path)
     if checks:
         print(json.dumps({"original_metrics_verification": checks}, indent=2))
-    summary = render_summary(results, validation)
+    summary = render_summary(results, validation, load_verification_report(args.verification))
     if args.output is None:
         print(summary, end="")
     else:
