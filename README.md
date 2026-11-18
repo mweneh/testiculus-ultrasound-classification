@@ -177,11 +177,12 @@ are 602 train (488 class 0, 114 class 1), 129 validation (104/25), and 129 test
 
 The audit found no exact duplicate pixel arrays. A 64-bit grayscale difference
 hash (dHash) with Hamming distance ≤4 flagged 22 candidate pairs, including
-pairs in different partitions. These are ambiguous review flags, not proof of
-duplicate acquisition or shared patient identity. Human review is pending; do
-not claim those pairs identify the same patient. Review them and document any
-grouping decision before training. The audit does not establish patient or
-centre independence.
+12 across partitions. The completed human review in
+[`reports/similarity_audit.md`](reports/similarity_audit.md) found no convincing
+cross-partition duplicates at the available contact-sheet resolution. Two
+within-training pairs appeared near-identical with different annotations;
+no split assignments changed. These observations do not establish shared
+patient identity, patient independence or centre independence.
 
 Historical split-generation command, from the repository root. Do not rerun
 it on the frozen experiment partitions:
@@ -771,3 +772,13 @@ tests/        automated tests; synthetic training/evaluation only
 
 See [AI_USE.md](AI_USE.md) for disclosure of AI-assisted implementation and
 the required human review.
+
+## Scientific report
+
+The [capstone report](report/capstone_report.pdf) explains the experimental
+rationale, verified results, performance–efficiency trade-offs and limitations.
+Its [LaTeX source](report/capstone_report.tex),
+[bibliography](report/references.bib) and
+[evidence/source audit](report/evidence_sources.md) accompany the PDF.
+See [report/README.md](report/README.md) for document rebuild and verification
+commands. Report preparation does not repeat training or held-out inference.

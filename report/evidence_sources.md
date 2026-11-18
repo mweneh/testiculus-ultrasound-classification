@@ -97,10 +97,10 @@ Primary sources checked:
     pages 26–39: <https://link.springer.com/book/10.1007/978-3-032-10192-1>.
     The requested supplied entry is preserved; the author should decide whether
     to update pagination against the final publisher record before submission.
-11. README and the earlier AI_USE opening still said similarity review was
-    pending despite the completed review in the audit. The report uses the
-    completed audit; its addition updates the disclosure of that completed
-    review. No underlying split or experimental record is changed.
+11. README and the earlier AI_USE opening said similarity review was pending
+    despite the completed review in the audit. This documentation discrepancy
+    is corrected alongside the report, using the completed audit. No
+    underlying split or experimental record is changed.
 12. Checkpoints remain excluded from Git. A reviewer needs the separately
     supplied Google Drive artifacts and dataset access to run the complete
     pipeline; the tracked report, tables and plots rebuild without them.

@@ -9,11 +9,13 @@ were preserved. It subsequently implemented the frozen test-result summaries,
 FastAPI prediction service, Grad-CAM for both architectures, Docker packaging
 and synthetic application tests. The assistant also helped draft this disclosure.
 
-The AI-assisted code requires project-developer review. Automated tests have
-been run, but the generated split and similarity candidates still require
-human methodological review. In particular, 22 perceptual-hash candidate pairs
-are listed in `reports/similarity_audit.md`; their similarity does not establish duplicate
-acquisition or patient identity. The exact release provenance of the local
+The AI-assisted code and split methodology require project-developer review.
+The completed human review recorded in `reports/similarity_audit.md` inspected
+all 22 perceptual-hash candidate pairs, including 12 across partitions, and
+found no convincing cross-partition duplicates at the available resolution.
+Two within-training pairs appeared near-identical with different annotations;
+no manifest assignments changed. These observations do not establish patient
+identity or independence. The exact release provenance of the local
 image copy remains unverified. The official dataset is licensed under
 CC BY-NC-SA 4.0, as documented in [data/README.md](data/README.md).
 
@@ -136,3 +138,31 @@ No clinical conclusions were generated. The project developer remains
 responsible for confirming data provenance, reviewing the split policy,
 verifying the original checkpoints and validation predictions, interpreting
 results, and approving the final scientific report.
+
+## Scientific report preparation
+
+AI assistance was used to read the supplied DSA 8401 course instructions,
+inspect source code and saved experimental artifacts, consult primary
+literature, and draft the scientific report in `report/capstone_report.tex`.
+It generated aggregate confusion-matrix and loss-history figures from saved
+records, built the bibliography and PDF, checked citations/cross-references,
+and inspected rendered pages. The supplied student name and registration
+number were used on the title page. No approved proposal or supervisor details
+were available.
+
+Report-only checks recomputed metrics from saved numeric prediction CSVs,
+verified validation threshold sweeps and hashes against their existing records,
+and checked manifests and training histories. Four report-specific automated
+tests passed. No models were executed, no ultrasound pixels were opened, no
+training or held-out inference was repeated, and no experimental records or
+thresholds were changed. The report distinguishes the previously recorded
+150-pass application suite from these new document/evidence checks; the full
+application suite was not rerun during writing.
+
+The report explicitly discloses MobileNet's post-hoc status, missing grouping
+metadata, the local/published dataset count discrepancy, missing original run
+metadata and the validation-baseline inconsistency. No archived ultrasound
+Grad-CAM outputs were available for scientific interpretation. The supplied
+dataset BibTeX entries are preserved, with a publisher-pagination discrepancy
+flagged for author review. The student remains responsible for the final
+argument, references, institutional requirements and submitted document.

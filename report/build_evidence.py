@@ -171,6 +171,7 @@ def render_figures(data):
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
+    from matplotlib.ticker import MaxNLocator
     import numpy as np
     plt.rcParams.update({'font.family': 'DejaVu Sans', 'font.size': 10,
                          'pdf.fonttype': 42, 'axes.spines.top': False,
@@ -185,8 +186,8 @@ def render_figures(data):
                 fraction = cm[i, j] / cm[i].sum()
                 ax.text(j, i, f'{cm[i,j]}\n({fraction:.1%})', ha='center', va='center',
                         color='white' if fraction > .55 else '#122336')
-        ax.set(xticks=[0, 1], yticks=[0, 1], xticklabels=['Homogeneous', 'Inhomogeneous'],
-               yticklabels=['Homogeneous', 'Inhomogeneous'], xlabel='Predicted class',
+        ax.set(xticks=[0, 1], yticks=[0, 1], xticklabels=['0', '1'],
+               yticklabels=['0', '1'], xlabel='Predicted class',
                title=NAMES[name] + ('*' if name == 'mobilenet_v3_small' else ''))
     axes[0].set_ylabel('Actual class')
     fig.savefig(OUT / 'figures/confusion_matrices.pdf', metadata=metadata)
@@ -198,6 +199,7 @@ def render_figures(data):
         ax.plot(epochs, [r['validation_loss'] for r in h], label='Validation', color='#9b3848')
         ax.axvline(model['training']['best_epoch'], color='#737373', ls=':', label='Best checkpoint')
         ax.set(xlabel='Epoch', title=NAMES[name] + ('*' if name == 'mobilenet_v3_small' else ''), ylim=(0, 1.85))
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True, nbins=5))
     axes[0].set_ylabel('Recorded weighted loss')
     axes[1].legend(fontsize=8)
     fig.savefig(OUT / 'figures/training_histories.pdf', metadata=metadata)
