@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader
 
 from src.data.dataset import TesticulUSDataset
 from src.data.transforms import get_transforms
-from src.models.architectures import CustomCNN, build_resnet18
+from src.models.architectures import CustomCNN, build_resnet18, build_mobilenet_v3_small
 
 
 CLASS_TO_LABEL = {"homogeneous": 0, "inhomogeneous": 1}
@@ -63,11 +63,17 @@ def _build_model(model_type: str, pretrained: bool = False) -> nn.Module:
         return CustomCNN(num_classes=NUM_CLASSES)
     if model_type == "resnet18":
         return build_resnet18(num_classes=NUM_CLASSES, pretrained=pretrained)
+    if model_type == "mobilenet_v3_small":
+        return build_mobilenet_v3_small(num_classes=NUM_CLASSES, pretrained=pretrained)
     raise ValueError(f"Unsupported model type: {model_type}")
 
 
 def _architecture_name(model_type: str) -> str:
-    return {"custom_cnn": "CustomCNN", "resnet18": "ResNet18"}[model_type]
+    names = {"custom_cnn": "CustomCNN", "resnet18": "ResNet18",
+             "mobilenet_v3_small": "MobileNetV3Small"}
+    if model_type not in names:
+        raise ValueError(f"Unsupported model type: {model_type}")
+    return names[model_type]
 
 
 def _preprocessing_metadata(model_type: str) -> dict:
@@ -84,7 +90,7 @@ def _preprocessing_metadata(model_type: str) -> dict:
         ],
         "evaluation_augmentation": [],
     }
-    if model_type == "resnet18":
+    if model_type in ("resnet18", "mobilenet_v3_small"):
         metadata.update({
             "grayscale_conversion": "3-channel",
             "normalization_mean": [0.485, 0.456, 0.406],

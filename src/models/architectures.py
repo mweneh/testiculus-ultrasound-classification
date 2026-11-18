@@ -4,6 +4,8 @@ import torch.nn as nn
 from torchvision.models import (
     resnet18,
     ResNet18_Weights,
+    mobilenet_v3_small,
+    MobileNet_V3_Small_Weights,
 )
 
 
@@ -67,4 +69,12 @@ def build_resnet18(num_classes=2, pretrained=True):
         num_classes,
     )
 
+    return model
+
+
+def build_mobilenet_v3_small(num_classes=2, pretrained=True):
+    """Torchvision MobileNetV3-Small with a two-class ultrasound output head."""
+    weights = MobileNet_V3_Small_Weights.IMAGENET1K_V1 if pretrained else None
+    model = mobilenet_v3_small(weights=weights)
+    model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, num_classes)
     return model

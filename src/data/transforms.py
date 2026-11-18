@@ -9,13 +9,14 @@ def get_transforms(model_type="custom_cnn", training=False):
     model_type:
         "custom_cnn" -> 1-channel grayscale
         "resnet18"   -> 3-channel RGB-compatible input
+        "mobilenet_v3_small" -> same three-channel ultrasound preprocessing
 
     training:
         True  -> apply training augmentation
         False -> deterministic preprocessing
     """
 
-    if model_type not in ("custom_cnn", "resnet18"):
+    if model_type not in ("custom_cnn", "resnet18", "mobilenet_v3_small"):
         raise ValueError(f"Unsupported model type: {model_type}")
 
     pipeline = [
@@ -36,7 +37,7 @@ def get_transforms(model_type="custom_cnn", training=False):
             transforms.ToTensor(),
         ])
 
-    elif model_type == "resnet18":
+    else:
         pipeline.extend([
             transforms.Grayscale(num_output_channels=3),
             transforms.ToTensor(),
