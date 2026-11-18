@@ -5,11 +5,77 @@ images. The repository provides a custom CNN and an ImageNet-initialized
 ResNet18, fixed image-level data splits, checkpointed training, and
 checkpoint-based evaluation and single-image inference.
 
-Actual validation-based threshold-selection results from Google Colab are
-preserved in [reports/validation_thresholds.json](reports/validation_thresholds.json).
-These are validation results; no held-out test results are reported here.
-The threshold integration did not retrain models or access the held-out test
-partition.
+Both models completed training, validation-based threshold selection and final
+held-out test evaluation in Google Colab. **The research experiments are
+frozen.** This application work does not retrain models or optimize thresholds.
+
+The [experiment summary](reports/experiment_summary.md) separates validation
+selection from final test results. The complete validation record is preserved
+unchanged in [validation_thresholds.json](reports/validation_thresholds.json);
+[final_test_results.json](reports/final_test_results.json) preserves the supplied
+test summaries and their provenance at import. Original trained weights and
+detailed artifacts are now available locally under ignored `training_runs/`
+and `results/`, copied from `MyDrive/Capstone/`. The aggregate
+[verification report](reports/artifact_verification.json) records source hashes,
+full-precision metrics, checkpoint metadata and successful trained-model checks.
+Weights, prediction rows and medical images remain outside Git.
+
+This is a research application. Patient and acquisition-centre independence
+are unverified; the system is not clinically validated or suitable for diagnosis.
+
+## Frozen final test results
+
+Both models used the same 129 images: 104 homogeneous and 25 inhomogeneous.
+Class 1 is positive; confusion matrices use actual rows and predicted columns,
+ordered [0, 1]. Thresholds were selected on validation only.
+
+| Model | ROC-AUC | Average precision | Accuracy | Balanced accuracy | Sensitivity | Specificity | F1 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Custom CNN | 0.6123 | 0.4029 | 0.6124 | 0.5317 | 0.4000 | 0.6635 | 0.2857 |
+| ResNet18 | 0.7473 | 0.5220 | 0.6434 | 0.6421 | 0.6400 | 0.6442 | 0.4103 |
+
+- Custom CNN: `[[69,35],[15,10]]`, threshold `0.4541136622428894`.
+- ResNet18: `[[67,37],[9,16]]`, threshold `0.3251684010028839`.
+
+Both accuracies fall below the **80.62% majority-class baseline**. ResNet18 has
+higher reported class-sensitive and ranking metrics; statistical significance
+has not been established. An always-homogeneous classifier has zero sensitivity
+and balanced accuracy 0.5.
+
+These are user-supplied Colab results, rounded to four decimal places.
+All supplied values agree with the original test metric JSONs at the stated
+precision. All full-precision test metrics, including ROC-AUC/AP, also reproduce
+from the original saved prediction CSVs at the frozen thresholds. The two CSVs
+contain identical test paths and labels. This verification did not open test
+images or the test manifest, or rerun held-out model inference.
+
+One original-artifact discrepancy is preserved and flagged: both validation
+`metrics.json` files record majority baseline `696/860 = 80.93%` instead of
+`104/129 = 80.62%`. Their model metrics reproduce. The frozen threshold JSON and
+final test artifacts already have the correct partition baseline, and the
+F1-based selections are unaffected. No original artifact was edited.
+
+Regenerate the summary without model execution or opening dataset partitions:
+
+```bash
+python -m src.experiment_summary --output reports/experiment_summary.md
+```
+
+Compare the original full-precision metrics with the supplied summaries and
+print artifact SHA-256 hashes:
+
+```bash
+python -m src.experiment_summary \
+  --custom-cnn-metrics results/custom_cnn_test/metrics.json \
+  --resnet18-metrics results/resnet18_test/metrics.json \
+  --output artifacts/verified_experiment_summary.md
+```
+
+This verifier expects the `src.evaluation` JSON structure, checks sample counts,
+thresholds, confusion matrices and all supplied metrics at the stated precision,
+and never changes the frozen records. The separate complete verification command
+below also recomputes metrics from prediction CSVs without final held-out model
+execution.
 
 ## Dataset and labels
 
@@ -128,7 +194,10 @@ Place the labelled images under `data/raw/homogeneous/` and
 their documented folders. Do not commit raw images, virtual environments, or
 model checkpoints.
 
-## Train a model
+## Training implementation (historical reproduction only)
+
+The original Colab training runs are complete. The commands in this section
+document the implementation; do not rerun training for application development.
 
 Training uses only `train.csv` and `validation.csv`. Class weights are computed
 from training labels only. Training augmentations are stochastic; validation
@@ -183,7 +252,7 @@ threshold selection are complete. It was not run during this integration:
 
 ```bash
 python -m src.evaluation \
-  --checkpoint checkpoints/custom_cnn/best_model.pth \
+  --checkpoint training_runs/custom_cnn/best_model.pth \
   --data-dir data/raw \
   --manifest data/splits/test.csv \
   --output-dir artifacts/evaluation/custom_cnn_test \
@@ -237,8 +306,8 @@ To reproduce the procedure with the original selected checkpoints, generate
 validation predictions only and save a separate comparison record:
 
 ```bash
-python -m src.evaluation --checkpoint checkpoints/custom_cnn/best_model.pth --data-dir data/raw --manifest data/splits/validation.csv --output-dir artifacts/validation/custom_cnn --threshold 0.5
-python -m src.evaluation --checkpoint checkpoints/resnet18/best_model.pth --data-dir data/raw --manifest data/splits/validation.csv --output-dir artifacts/validation/resnet18 --threshold 0.5
+python -m src.evaluation --checkpoint training_runs/custom_cnn/best_model.pth --data-dir data/raw --manifest data/splits/validation.csv --output-dir artifacts/validation/custom_cnn --threshold 0.5
+python -m src.evaluation --checkpoint training_runs/resnet18/best_model.pth --data-dir data/raw --manifest data/splits/validation.csv --output-dir artifacts/validation/resnet18 --threshold 0.5
 python -m src.threshold_selection --custom-cnn-predictions artifacts/validation/custom_cnn/predictions.csv --resnet18-predictions artifacts/validation/resnet18/predictions.csv --validation-manifest data/splits/validation.csv --output artifacts/reproduced_validation_thresholds.json
 ```
 
@@ -260,23 +329,20 @@ python -m src.threshold_selection \
 ```
 
 This is read-only and opens no images or other partition manifests. The local
-validation manifest matches the recorded SHA-256. Both source CSVs currently
-point to unavailable `/content/drive/MyDrive/...` Colab paths, so the command
-reports `source_predictions_verified: false` for each model. The recorded
-sweeps and their 0.5 metrics are internally consistent with the validation
-class counts, but this does not verify the original prediction bytes or their
-association with individual images.
+validation manifest matches the recorded SHA-256. Without explicit prediction
+paths this command checks only the record and manifest and reports
+`source_predictions_verified: false`; it does not search recorded Colab paths.
 
-Once the original Colab CSVs have been copied to local ignored artifact paths,
-verify their exact recorded hashes, paths/labels, complete recomputed sweeps
-and metrics without running either model:
+Both original validation CSVs are now present under `results/`. Their exact
+recorded hashes, paths/labels, complete sweeps and selected-threshold metrics
+have been verified. Reproduce this check without running either model:
 
 ```bash
 python -m src.threshold_selection \
   --verify-config reports/validation_thresholds.json \
   --validation-manifest data/splits/validation.csv \
-  --custom-cnn-predictions artifacts/validation/custom_cnn/predictions.csv \
-  --resnet18-predictions artifacts/validation/resnet18/predictions.csv
+  --custom-cnn-predictions results/custom_cnn_validation/predictions.csv \
+  --resnet18-predictions results/resnet18_validation/predictions.csv
 ```
 
 Each source is verified separately; supplying one CSV leaves the other marked
@@ -287,25 +353,52 @@ the verifier.
 
 ### Reproducibility and integration limits
 
-The record contains prediction and validation-manifest hashes, but no
-checkpoint hashes, selected epochs or Colab runtime/package versions. Local
-checkpoints are unavailable, so their pairing with these thresholds and their
-compatibility with the repository's checkpoint metadata cannot be confirmed.
-Before final evaluation, verify that the original selected weights correspond
-to each recorded prediction file; architecture name alone cannot prove this.
+The downloaded checkpoints load with the correct class mapping and preprocessing
+metadata. Their recorded best epochs/losses agree with the training histories:
+Custom CNN completed 15 epochs and selected epoch 8; ResNet18 completed 14 and
+selected epoch 7. For two validation samples per model, local probabilities
+agree with Colab within `2.1e-7`, below the predefined absolute tolerance `1e-5`;
+frozen-threshold decisions agree. API and CLI predictions agree exactly. Grad-CAM
+was verified with both trained models on synthetic inputs without changing
+predictions or parameter gradients.
+
+These are compatibility and reproducibility checks, not new test evaluations.
+The expected Google Drive layout, mirrored locally, is:
+
+```text
+training_runs/custom_cnn/best_model.pth
+training_runs/custom_cnn/history.csv
+training_runs/resnet18/best_model.pth
+training_runs/resnet18/history.csv
+results/custom_cnn_test/{metrics.json,predictions.csv}
+results/resnet18_test/{metrics.json,predictions.csv}
+results/custom_cnn_validation/
+results/resnet18_validation/
+results/validation_thresholds.json
+```
+
+The downloaded threshold file is byte-identical to the unchanged tracked record.
+Checkpoint, history, metric and prediction-file hashes are recorded in
+`reports/artifact_verification.json`; they fingerprint supplied local copies and
+do not substitute for an independent provider checksum. The original rounded
+test-summary JSON preserves its provenance status at import; subsequent verified
+evidence is kept separately rather than rewriting the experimental record.
 The checkpoint loader expects `model_type`, `architecture`, `class_to_idx`
 and `model_state_dict` metadata from `src.training`. Evaluation and inference
 reject incompatible class mappings and require class 1 to be inhomogeneous.
 
-Dependencies in `requirements.txt` are unpinned, so exact probability
-reproduction across runtimes is not guaranteed. Keep the original CSVs,
-checkpoint files and environment details outside Git for the audit. Patient
+Research dependencies in `requirements.txt` are unpinned. The separate serving
+requirements record the direct versions used for application checks, and the
+Docker base image is pinned by digest; these do not reconstruct the missing
+Colab environment. Exact probabilities across runtimes are not guaranteed.
+Keep the original CSVs, checkpoint files and environment details outside Git
+for the audit. Patient
 and centre identifiers remain unavailable: validation is provisional at image
 level and does not establish patient or centre independence.
 
-Only the aggregate JSON record is tracked for this experiment. Raw data,
-checkpoints, `artifacts/`, Colab-style `results/`, and `.env` remain ignored;
-do not commit medical images, prediction CSVs or credentials.
+Only aggregate experiment records and documentation are tracked. Raw data,
+checkpoints, `training_runs/`, `artifacts/`, Colab-style `results/`, and `.env`
+remain ignored; do not commit medical images, prediction CSVs or credentials.
 
 ## Single-image inference
 
@@ -313,7 +406,7 @@ Use the same frozen configuration for an explicitly supplied image:
 
 ```bash
 python -m src.inference \
-  --checkpoint checkpoints/resnet18/best_model.pth \
+  --checkpoint training_runs/resnet18/best_model.pth \
   --image /path/to/image.png \
   --threshold-config reports/validation_thresholds.json
 ```
@@ -329,6 +422,164 @@ of the working directory. A missing or invalid configuration, unsupported model
 name, or selection inconsistent with the recorded sweep causes an error rather
 than a fallback to 0.5. Include `reports/validation_thresholds.json` when
 packaging the source for inference, or supply its deployed location explicitly.
+
+## FastAPI application
+
+For a CPU serving environment, install the application versions separately
+from the historical research environment:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install torch==2.14.1 torchvision==0.29.1 --index-url https://download.pytorch.org/whl/cpu
+python -m pip install -r requirements-serving.txt
+```
+
+After downloading the original checkpoints, start the service:
+
+```bash
+export CUSTOM_CNN_CHECKPOINT="$PWD/training_runs/custom_cnn/best_model.pth"
+export RESNET18_CHECKPOINT="$PWD/training_runs/resnet18/best_model.pth"
+export THRESHOLD_CONFIG="$PWD/reports/validation_thresholds.json"
+export DEVICE=cpu
+uvicorn src.api:app --host 127.0.0.1 --port 8000
+```
+
+Configure either or both models. Each configured checkpoint is loaded once
+during application lifespan startup; missing files, incompatible checkpoint
+metadata or invalid threshold configuration fail startup. Random weights are
+used only by tests and are never a service fallback. `create_app(...)` also
+accepts explicit checkpoint paths, configuration and device for integration.
+
+```bash
+curl --fail http://127.0.0.1:8000/health
+curl --fail -F 'file=@/path/to/image.png' \
+  'http://127.0.0.1:8000/predict?model_type=resnet18'
+```
+
+`POST /predict` requires `model_type=custom_cnn` or `model_type=resnet18` and a
+multipart `file`. It returns `model_type`, `prediction` (0 or 1), `class_name`,
+`positive_class`, `probability_class_1`, the frozen `threshold` and its
+`threshold_source`. There is no request-level threshold override. `/health`
+reports loaded models and thresholds; `/docs` provides the OpenAPI interface.
+An unconfigured model returns 503; invalid model parameters/missing files return
+422; empty/undecodable images return 400; unsupported formats return 415; images
+over 5 MiB or 20 megapixels return 413. The application does not persist uploads.
+
+API and CLI share `CheckpointPredictor` and deterministic preprocessing:
+
+| Step | Custom CNN | ResNet18 |
+|---|---|---|
+| Source conversion | Grayscale L | Grayscale L |
+| Resize | 224×224, bilinear | 224×224, bilinear |
+| Model channels | 1 | Grayscale repeated to 3 channels |
+| Tensor values | [0, 1] | [0, 1], then ImageNet normalization |
+| Mean / standard deviation | None | [0.485, 0.456, 0.406] / [0.229, 0.224, 0.225] |
+
+Inference uses evaluation mode and disabled gradients. A per-model lock
+serializes shared model execution. See the official FastAPI documentation for
+[lifespan loading](https://fastapi.tiangolo.com/advanced/events/) and
+[multipart uploads](https://fastapi.tiangolo.com/tutorial/request-files/).
+
+## Grad-CAM
+
+Generate explanations for an explicitly supplied image without training:
+
+```bash
+python -m src.gradcam \
+  --checkpoint training_runs/resnet18/best_model.pth \
+  --image /path/to/image.png \
+  --output-dir artifacts/gradcam/resnet18
+```
+
+The implementation follows [Selvaraju et al., Grad-CAM](https://arxiv.org/abs/1610.02391):
+differentiate the target class's pre-softmax logit, spatially average its
+gradients, weight activation channels, sum and apply ReLU. Target layers are
+`features.12` (Custom CNN's last convolution) and `layer4.1` (ResNet18's final
+residual block). The heatmap is interpolated to model input size and normalized
+to [0, 1]; constant maps become zeros. Temporary hooks are removed, model modes
+are restored and weights/parameter gradients remain unchanged.
+
+By default, the explained class is the frozen-threshold prediction, which can
+differ from the softmax argmax. Use `--target-class 0` or `--target-class 1` to
+inspect a specific class. Outputs are `heatmap.png` (224×224 grayscale),
+`overlay.png` (red attribution at original image size) and `prediction.json`
+with the threshold, prediction, explained class and target layer. Generated
+overlays may reproduce source images and belong under ignored `artifacts/`.
+These are coarse attribution maps, not segmentation masks, verified lesion
+localization or evidence of clinical validity.
+
+## Docker
+
+Build the CPU inference image:
+
+```bash
+docker build -t testiculus-inference:local .
+```
+
+The build context allows only source code, serving requirements, Dockerfile
+and the frozen threshold JSON. Datasets, checkpoints, histories, prediction
+artifacts, credentials, Git metadata and virtual environments are excluded.
+The image contains no trained weights. Mount downloaded checkpoints read-only:
+
+```bash
+docker run --rm --read-only --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+  -p 127.0.0.1:8000:8000 \
+  --mount "type=bind,src=$PWD/training_runs,dst=/models,readonly" \
+  -e CUSTOM_CNN_CHECKPOINT=/models/custom_cnn/best_model.pth \
+  -e RESNET18_CHECKPOINT=/models/resnet18/best_model.pth \
+  testiculus-inference:local
+```
+
+The service runs as UID/GID 10001, with one worker and a `/health` Docker
+health check. Mounted files must be readable by that UID. The default device
+is CPU; this image does not configure CUDA. Use the same health and prediction
+requests shown above.
+
+Reproduce the container acceptance checks with the downloaded trained weights:
+
+```bash
+python -m src.container_smoke \
+  --checkpoints-dir training_runs \
+  --output artifacts/container_verification.json
+```
+
+This starts a temporary localhost-only container on an ephemeral port, checks
+both trained-model predictions against local inference, checks Grad-CAM and
+health, verifies read-only mounts/non-root execution and artifact exclusions,
+then stops/removes the container. Inputs are synthetic; it opens no medical
+images. The host needs the test/development environment and Docker access.
+The [container acceptance report](reports/container_verification.json) records
+a successful run with both downloaded trained checkpoints: API probabilities
+match local CPU inference exactly, both Grad-CAM commands work, and Docker
+health/non-root/read-only checks pass. The temporary container was removed.
+
+## Reproduce original-artifact acceptance
+
+From the development environment with `requirements.txt` installed:
+
+```bash
+python -m src.artifact_verification \
+  --artifact-root . \
+  --data-dir data/raw \
+  --check-api \
+  --output artifacts/artifact_verification.json
+```
+
+This reads original validation/test prediction CSVs and metric JSONs, verifies
+the threshold record and validation manifest, checks checkpoint metadata and
+histories, and recomputes CSV metrics at the already frozen thresholds. It also
+checks trained-model inference on one validation image from each class per model
+and compares API/CLI outputs. Test images and the test manifest are never opened;
+there is no model training, threshold search on test results or new test inference.
+Omit `--data-dir` to use synthetic images for the inference checks.
+
+The tracked aggregate acceptance report contains complete test metrics and
+artifact fingerprints without image identifiers, prediction rows or weights.
+Original validation baseline discrepancies are reported explicitly; all other
+metric inconsistencies fail verification. Review a regenerated report before
+replacing tracked evidence. Original Colab runtime/package versions and verified
+patient/centre metadata remain unavailable.
 
 ## Tests
 
@@ -353,6 +604,23 @@ To omit even the existing synthetic-training test, run:
 python -m pytest -q -k 'not synthetic_training_and_checkpoint_roundtrip'
 ```
 
+Install `requirements.txt` for the complete test suite (including pytest and
+HTTPX). API tests use FastAPI TestClient with actual untrained checkpoint
+roundtrips for both architectures; no ImageNet downloads or optimization occur.
+They cover upload validation, startup configuration, model-specific decisions,
+readiness and API/CLI probability agreement. Grad-CAM tests cover analytic
+attribution, both architectures, constant maps, mode/gradient preservation,
+hook cleanup and CLI output alignment. Summary tests check supplied metrics
+against confusion counts and frozen thresholds. The serving tests validate
+software behavior. The separate artifact acceptance checks reproduce saved
+Colab metrics from prediction CSVs and verify trained-model compatibility.
+
+Application verification on 18 November 2026: **128 tests passed**, with the
+existing synthetic-training test excluded. Original-artifact acceptance and the
+running-container smoke test also passed with the downloaded trained weights.
+The only original metric discrepancy is the documented validation majority
+baseline; no threshold, weight, prediction CSV or original metric file changed.
+
 ## Repository layout
 
 ```text
@@ -362,10 +630,16 @@ src/
   training.py training CLI and checkpoint loader
   evaluation.py checkpoint evaluation CLI and metrics
   inference.py  single-image checkpoint inference
+  api.py        FastAPI lifespan, health and prediction routes
+  gradcam.py    Grad-CAM and overlay CLI
+  experiment_summary.py frozen result checks and summary generator
+  artifact_verification.py original artifacts and trained-model acceptance
+  container_smoke.py Docker acceptance with synthetic pixels / trained weights
   threshold_config.py    validated shared threshold loader
   threshold_selection.py validation-only selection and record verification
 data/splits/  tracked CSV manifests with relative paths and labels
 reports/      tracked split/similarity audit and frozen validation threshold record
+Dockerfile    CPU serving image; checkpoints mounted separately
 tests/        automated tests; synthetic training/evaluation only
 ```
 
