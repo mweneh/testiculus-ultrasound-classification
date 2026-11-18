@@ -137,7 +137,8 @@ not claim those pairs identify the same patient. Review them and document any
 grouping decision before training. The audit does not establish patient or
 centre independence.
 
-Regenerate the manifests and audit from the repository root:
+Historical split-generation command, from the repository root. Do not rerun
+it on the frozen experiment partitions:
 
 ```bash
 python -m src.data.splits \
@@ -153,8 +154,8 @@ arrays have conflicting class labels. Perceptual-hash candidates are reported
 for review and are not automatically grouped. Split manifests contain paths
 and labels, not medical image pixels.
 
-Check the existing manifests and render all flagged pairs without regenerating
-or modifying the manifests:
+Historical contact-sheet command, which reads dataset images. It is excluded
+from the frozen application checks:
 
 ```bash
 python -m src.data.similarity_review \
@@ -173,11 +174,14 @@ are filename stems, not patient identifiers.
 
 ## Setup
 
-Python 3.10 or later is recommended. Install dependencies in a virtual
-environment:
+The application was verified on Linux with Python 3.12.3. The pinned serving
+dependencies require Python 3.12 or later. Use a fresh virtual environment
+without `--system-site-packages`; reusing an environment with unrelated tools
+can introduce dependency conflicts. For inference and the API, use the smaller
+[serving installation](#fastapi-application). For development and tests:
 
 ```bash
-python -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
@@ -193,6 +197,14 @@ Place the labelled images under `data/raw/homogeneous/` and
 `data/raw/inhomogeneous/`, with the optional unlabelled images and masks in
 their documented folders. Do not commit raw images, virtual environments, or
 model checkpoints.
+
+The exploration notebook is tracked with saved outputs and execution counts
+cleared. Before committing an executed notebook, clear all outputs and remove
+attachments: ultrasound displays and image grids can be embedded inside the
+notebook even when no image files are staged. The repository hygiene test checks
+this. Earlier Git commits still contain the old embedded displays; clearing the
+current notebook does not remove those historical objects. History has not been
+rewritten.
 
 ## Training implementation (historical reproduction only)
 
@@ -363,7 +375,8 @@ was verified with both trained models on synthetic inputs without changing
 predictions or parameter gradients.
 
 These are compatibility and reproducibility checks, not new test evaluations.
-The expected Google Drive layout, mirrored locally, is:
+The project developer supplied the trained checkpoints and experiment artifacts
+from their Google Drive folder `MyDrive/Capstone/`, mirrored locally as:
 
 ```text
 training_runs/custom_cnn/best_model.pth
@@ -376,6 +389,27 @@ results/custom_cnn_validation/
 results/resnet18_validation/
 results/validation_thresholds.json
 ```
+
+### Weight sources
+
+The Custom CNN was initialized from scratch. The repository's ResNet18 training
+path uses Torchvision's `ResNet18_Weights.DEFAULT`, which resolves to
+`IMAGENET1K_V1` in the verified Torchvision 0.29.1 installation. These are
+[official ImageNet-1K pretrained weights](https://docs.pytorch.org/vision/stable/models/generated/torchvision.models.resnet18.html),
+served as [resnet18-f37072fd.pth](https://download.pytorch.org/models/resnet18-f37072fd.pth).
+The training code replaces the 1,000-class head with a two-class head before
+fine-tuning. The Colab checkpoint records `pretrained_initialization: true`,
+but does not record the original Torchvision version or pretrained-file hash;
+the precise original download cannot be independently authenticated.
+
+The trained ultrasound classifiers are the developer-supplied
+`training_runs/custom_cnn/best_model.pth` and
+`training_runs/resnet18/best_model.pth` above. They are not distributed in Git
+or the Docker image, and there is no automatic checkpoint download. Obtain
+them separately from the project developer. Inference restores these complete
+trained checkpoints with `pretrained=False`; it does not download ImageNet
+weights. Preprocessing follows the recorded ultrasound-training transforms,
+including direct 224×224 resizing, rather than the default ImageNet crop recipe.
 
 The downloaded threshold file is byte-identical to the unchanged tracked record.
 Checkpoint, history, metric and prediction-file hashes are recorded in
@@ -429,11 +463,19 @@ For a CPU serving environment, install the application versions separately
 from the historical research environment:
 
 ```bash
-python3 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 python -m pip install torch==2.14.1 torchvision==0.29.1 --index-url https://download.pytorch.org/whl/cpu
 python -m pip install -r requirements-serving.txt
+python -m pip check
 ```
+
+This installation was repeated in an isolated Python 3.12 environment:
+dependency checks, both inference/Grad-CAM CLIs and HTTP API predictions passed
+with the trained checkpoints and synthetic images. The pre-existing development
+environment inherits system packages and has unrelated dependency conflicts;
+use a fresh environment or the Docker image for serving. The Docker dependency
+check also passed.
 
 After downloading the original checkpoints, start the service:
 
@@ -583,29 +625,33 @@ patient/centre metadata remain unavailable.
 
 ## Tests
 
-Run all automated tests from the repository root:
+Install `requirements.txt` for the development suite (including pytest and
+HTTPX). From the repository root, run the application checks without any
+optimization steps:
 
 ```bash
-python -m pytest -q
+python -m pytest -q -k 'not synthetic_training_and_checkpoint_roundtrip'
 ```
 
 The tests cover dataset loading, preprocessing, architectures without weight
 downloads, split reproducibility/nonoverlap, label mapping, exact duplicate
-grouping, class weights, synthetic-tensor training, checkpoint roundtrip, and
+grouping, class weights, checkpoint loading/serialization, and
 metrics/plots. The held-out medical-image test manifest is not evaluated by
 the test suite. Threshold tests cover the unchanged Colab record, malformed
 configuration, exact F1 ties, source-hash and metric verification, overwrite
 protection, both model lookups, inclusive threshold decisions and evaluation /
 inference consistency. All image inputs in pipeline tests are synthetic, and
 the inference checkpoint test uses untrained weights without optimization.
-To omit even the existing synthetic-training test, run:
+The excluded test is
+`tests/test_training.py::test_synthetic_training_and_checkpoint_roundtrip`.
+It runs one optimization epoch on a newly initialized Custom CNN using random
+16×16 tensors, then checks checkpoint restoration in a temporary directory.
+It uses neither ultrasound images nor the trained Colab checkpoints. It was
+deselected to keep application verification free of optimization; it is not a
+reported failure. An unfiltered `python -m pytest -q` includes that test and
+performs the synthetic optimization, so it was not run for this frozen work.
 
-```bash
-python -m pytest -q -k 'not synthetic_training_and_checkpoint_roundtrip'
-```
-
-Install `requirements.txt` for the complete test suite (including pytest and
-HTTPX). API tests use FastAPI TestClient with actual untrained checkpoint
+API tests use FastAPI TestClient with actual untrained checkpoint
 roundtrips for both architectures; no ImageNet downloads or optimization occur.
 They cover upload validation, startup configuration, model-specific decisions,
 readiness and API/CLI probability agreement. Grad-CAM tests cover analytic
@@ -615,9 +661,12 @@ against confusion counts and frozen thresholds. The serving tests validate
 software behavior. The separate artifact acceptance checks reproduce saved
 Colab metrics from prediction CSVs and verify trained-model compatibility.
 
-Application verification on 18 November 2026: **128 tests passed**, with the
-existing synthetic-training test excluded. Original-artifact acceptance and the
-running-container smoke test also passed with the downloaded trained weights.
+The earlier application run on 18 November 2026 had **128 passed, 1 deselected**.
+After adding the notebook hygiene regression test, the current run has
+**129 passed, 1 deselected** (130 collected). It emits one Starlette warning
+that its HTTPX-based TestClient integration is deprecated; the API tests pass.
+These counts do not include the separate original-artifact acceptance or
+running-container smoke checks, which also passed with the trained weights.
 The only original metric discrepancy is the documented validation majority
 baseline; no threshold, weight, prediction CSV or original metric file changed.
 
