@@ -51,7 +51,8 @@ The local-artifact unit check skips when separately supplied records are absent.
 The other three tests use tracked/synthetic numeric data. `check_document.py`
 checks the compiled PDF, citation/label integrity, abstract length, thresholds,
 manual validation table, publisher-corrected ICIAP metadata, unchanged BMVC
-entry and release-package instructions.
+metadata with brace-protected title capitalization, licence-title capitalization
+and release-package instructions.
 `--collect` is only for deliberately rebuilding the report's numeric snapshot
 from saved artifacts; it never writes back to experiments. No command here
 opens ultrasound pixels, executes a model, retrains or performs test inference.
@@ -72,8 +73,17 @@ submission details and scope, confirm examiner access to separately supplied
 checkpoints/artifacts. The ICIAP reference has been corrected to Springer's
 version of record: pages 26–39, DOI `10.1007/978-3-032-10192-1_3`, publication
 year 2026 for the ICIAP 2025 conference. Its key `2025ICIAP` and the mandatory
-BMVC citation are retained; original provider/release files remain unchanged.
+BMVC citation are retained; the original provider BibTeX is preserved, while
+release notes now identify the final published ICIAP record.
 The release query on 19 November 2026 returned `release not found`, so the
 report describes planned distribution and local examiner access, without
 claiming public downloads. Redistribution review and authorized publication
 remain outstanding. See the evidence audit for remaining gaps.
+
+The [independent audit](INDEPENDENT_AUDIT.md) is preserved unchanged. The
+[submission-readiness record](submission_readiness.md) lists the corrections,
+verification and remaining access decisions. The owner-confirmed fallback is
+Strathmore University Virtual Campus — DSA 8401, **Capstone Project (23 Nov)**
+assignment submission. Upload and examiner-access verification are pending;
+GitHub Releases remains preferred. This assignment label does not revise the
+report's recorded deadline.

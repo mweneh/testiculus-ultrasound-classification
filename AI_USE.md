@@ -212,3 +212,32 @@ against saved numeric artifacts. It did not rewrite the scientific argument,
 change results, execute models, retrain, repeat held-out evaluation, publish a
 release or push commits. The student retains responsibility for final review
 and the independent scientific audit.
+
+## Independent-audit corrections (19 November 2026)
+
+Following the supplied Claude Code audit, the assistant made limited
+submission-readiness changes: a README architecture diagram, explicit framing
+of existing realistic complications, bibliography capitalization protection,
+an exploratory-model efficiency caption and updated release-note citation
+metadata. It preserved the original audit and all frozen scientific records.
+The student identified Virtual Campus's DSA 8401, Capstone Project (23 Nov)
+assignment as the alternative checkpoint submission channel; upload/access
+verification remains pending and GitHub Releases remains preferred.
+
+The assistant fetched remote references and checked release status read-only,
+reviewed tracked/outgoing files, ignore rules and high-confidence credential
+patterns, and prepared commands for an authorized normal push and versioned
+release targeting the final reviewed source commit. No remote push, tag,
+upload or release publication occurred. Weight-redistribution decisions remain
+with the owner; no licence was invented.
+
+Mermaid CLI rendered the README diagram locally using temporary tools outside
+the project's dependencies. The assistant strictly loaded all three trained
+checkpoints on CPU, checked package hashes/preprocessing/frozen thresholds and
+reran 18 release-tooling tests plus one repository-hygiene test (19 passed).
+It ran the four report tests and saved-evidence checks, rebuilt the 22-page PDF,
+checked rendered bibliography capitalization and visually inspected affected
+pages. These checks did not run model forward passes, retrain, open ultrasound
+pixels, repeat held-out inference or regenerate experimental records. The
+150-test application-suite result remains historical. The student remains
+responsible for scientific review, rights decisions and verified examiner access.

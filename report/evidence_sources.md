@@ -106,7 +106,8 @@ Primary sources checked:
    this writing task. Prior cached-image verification is the deployment evidence.
 10. The supplied ICIAP BibTeX's pagination discrepancy is resolved in the report:
     pages 26–39 and publication year 2026 follow the publisher chapter record.
-    Original provider/release files remain unchanged as historical records.
+    Original provider BibTeX entries remain historical records; the audit
+    follow-up below records the release-note citation correction.
 11. README and the earlier AI_USE opening said similarity review was pending
     despite the completed review in the audit. This documentation discrepancy
     is corrected alongside the report, using the completed audit. No
@@ -152,3 +153,65 @@ Primary sources checked:
   numeric artifacts only; no training, inference or test evaluation is repeated.
   Final compilation, visual inspection and test results are recorded in
   `verification.json`.
+
+## Independent-audit follow-up (19 November 2026)
+
+The complete supplied [independent audit](INDEPENDENT_AUDIT.md) is retained
+unchanged (SHA-256 `fb6909c63aaabca41925a14156a7234103133d1af073e25348235da238ec7be1`).
+Its saved-prediction bootstrap observations were not added to the frozen
+scientific results. See [submission readiness](submission_readiness.md) for
+remaining owner actions.
+
+- **F3:** README now includes a Mermaid flowchart separating completed model
+  development from deployed inference, names all three architectures and
+  describes Docker's read-only checkpoint mount. The exact fenced block was
+  rendered successfully to SVG with Mermaid CLI 11.15.0 in temporary tooling.
+  It uses GitHub's documented `mermaid` fence and standard flowchart syntax:
+  <https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams>.
+  A GitHub-hosted rendering is not claimed before pushing.
+- **F4:** Section 3.1 explicitly connects natural imbalance, absent grouping
+  metadata, the archive-count discrepancy and possibly correlated images to
+  the capstone's realistic-complication requirement. Class weighting,
+  imbalance-aware evaluation and integrity/similarity checks address aspects
+  of these complications without establishing patient/centre independence.
+- **F5:** Brace protection preserves `US`, `Cond-UNet`, `NonCommercial` and
+  `ShareAlike`. Rendered BibTeX/PDF output was checked. Springer again confirms
+  the ICIAP proceedings paper's 2026 publication, pp. 26–39 and DOI; the mandatory
+  BMVC metadata and CC BY-NC-SA 4.0 attribution remain intact.
+- **F6:** The release notes now identify the ICIAP version of record. The
+  provider's original BibTeX remains byte-identical. Only release notes,
+  manifest and checksum metadata changed in the ignored 11-file package;
+  original/packaged checkpoint and both threshold hashes remain unchanged.
+  Strict CPU loads and preprocessing/threshold checks passed for all models,
+  without forward passes or image access. The 18 release tests and one
+  repository-hygiene test passed again (19 total); this is separate from the
+  historical 150-test application record.
+- **F7 (optional):** The efficiency-table caption now explicitly identifies
+  MobileNetV3-Small as the post-hoc exploratory model. No numerical table or
+  figure changed. The optional subtitle suggestion F8 was left unchanged;
+  the existing synthetic-only explainability limitation remains explicit.
+- **F1/F2 remain pending access actions:** A fresh `git fetch origin` confirmed
+  `origin/main` at `6d0a196bbe702913d4f4a242e681d1ba0518f660`, with 23 local
+  commits ahead and none behind before these corrections. The read-only
+  release query again returned `release not found`. Git path/blob, notebook,
+  ignore-rule and credential-pattern checks found no forbidden current tracked
+  artifacts or high-confidence credentials in the outgoing blobs. These are
+  scoped checks, not an exhaustive security audit. No push, remote tag, upload
+  or publication was performed.
+- The owner confirmed the official alternative: **Strathmore University Virtual
+  Campus — DSA 8401, Capstone Project (23 Nov) assignment submission**. Upload
+  and examiner-access verification remain pending. GitHub Releases is preferred,
+  with the repository URL submitted through Virtual Campus. The report's
+  20 November deadline remains unchanged; no delivery is implied by naming a
+  channel.
+- Primary Torchvision documentation still cautions that pretrained weights can
+  have dataset-derived terms. Both ImageNet terms-page retrievals timed out
+  again; checkpoint rights/ShareAlike treatment and ImageNet-derived
+  redistribution remain owner decisions, not assumed permissions. Dataset and
+  Creative Commons notices were rechecked; neither the dataset licence nor
+  model-weight notices were changed.
+- Four report tests and saved-evidence checks passed; the PDF was rebuilt with
+  pdfLaTeX/BibTeX and affected pages visually inspected. No retraining,
+  ultrasound-pixel access, test inference, threshold/split/result changes or
+  experimental-record regeneration occurred. Verification hashes are refreshed
+  in `verification.json`.

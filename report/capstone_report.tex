@@ -123,6 +123,7 @@ The local TesticulUS-Real copy contains 860 classification-labelled grayscale PN
 The local image folders contain 1,060 images, whereas the official release description reports 1,053 real images \citep{dataset,2026BMVC}. No release checksum or version mapping explains the seven-image difference. The local classification counts and manifests are verifiable, but exact equivalence to the advertised archive is not established. This discrepancy is preserved as a provenance limitation rather than resolved by deleting images or inventing a release explanation.
 
 The target is the released appearance label. No verified outcome labels or local patient identifiers support a patient-level clinical prediction task. The naturally occurring class imbalance is the principal practical complication addressed through training and evaluation; it was not artificially introduced.
+The realistic complications addressed for the capstone comprise this natural 4.24:1 imbalance, missing patient/examination and image-level centre identifiers, the archive-count discrepancy and potentially correlated images. Training-class weights and imbalance-aware metrics address unequal class representation, while integrity checks and similarity auditing screen for corrupt or repeated images; these measures cannot establish patient independence or cross-centre generalization.
 
 \subsection{Partitioning and integrity}
 A fixed seed of 42 produced a stratified approximately 70/15/15 split (Table~\ref{tab:split}). Class-qualified relative paths, rather than filename stems alone, identify samples. The committed manifests explicitly define training, validation and test membership. Their path sets are disjoint; all three model prediction files identify the same 129 test paths and labels.
@@ -308,7 +309,7 @@ Table~\ref{tab:efficiency} reports the final trained-checkpoint benchmark. Mobil
 
 \begin{table}[htbp]
 \centering\small
-\caption{Measured CPU model-forward latency and checkpoint size. Intel Core i7-7500U; float32; batch 1; $224\times224$ inputs; two intra-op threads, one inter-op thread; ten warm-ups and 50 timed forwards per model.}
+\caption{Measured CPU model-forward latency and checkpoint size. Intel Core i7-7500U; float32; batch 1; $224\times224$ inputs; two intra-op threads, one inter-op thread; ten warm-ups and 50 timed forwards per model. MobileNetV3-Small is the post-hoc exploratory model.}
 \label{tab:efficiency}
 \input{generated/efficiency.tex}
 \par\source{\code{reports/model_efficiency.json}; all 50 raw measurements per model are retained.}
@@ -412,7 +413,7 @@ Tests and disclosure & \code{tests/}; \code{docs/mobilenet_experiment.md}; \code
 The original Custom CNN and ResNet18 checkpoints and artifacts were supplied from Google Drive under \code{MyDrive/Capstone/}, mirrored in \code{training_runs/} and \code{results/}; the exploratory MobileNet checkpoint was produced locally. This describes historical provenance. Source code is maintained at \url{https://github.com/mweneh/testiculus-ultrasound-classification}; the chosen checkpoint distribution channel is separate GitHub Releases. Examiners should use the matching supplied source checkout pending an authorized push of the submission commits. The prepared tag \code{models-v1.0.0} was not found by a GitHub release query on 19 November 2026. Public checkpoint download is therefore not claimed. Owner review of redistribution terms and authorized publication remain outstanding; \code{release/README.md} records that step.
 
 \begin{samepage}
-The locally supplied package is in \path{artifacts/releases/models-v1.0.0/}. It contains both complete threshold JSONs and these checkpoints:
+The prepared local package is in \path{artifacts/releases/models-v1.0.0/}. It contains both complete threshold JSONs and these checkpoints:
 \begin{itemize}
 \item Custom CNN: \code{testiculus-custom-cnn-v1.pth}.
 \item ResNet18: \code{testiculus-resnet18-v1.pth}.
@@ -430,9 +431,11 @@ python -m src.inference --device cpu \
 \end{verbatim}
 The verifier checks assets against the trusted source manifest before strict CPU loading. Custom CNN uses the same threshold JSON; MobileNet uses \path{mobilenet_v3_small_thresholds.json}. After publication, the optional downloader installs under \path{artifacts/checkpoints/models-v1.0.0/}; the same commands accept that directory. The README also gives a read-only Docker mount for these flat asset names. Checkpoint binaries remain outside ordinary Git commits. Hashes establish consistency with supplied bytes, not independently authenticated Colab provenance.
 
+The owner-confirmed alternative channel is Strathmore University Virtual Campus, DSA 8401, \emph{Capstone Project (23 Nov)} assignment submission, supplying the matching source checkout and complete checkpoint package. Upload and examiner-access verification are pending. GitHub Releases remains preferred, with the repository URL submitted through Virtual Campus. The assignment label does not change this report's recorded submission deadline.
+
 ResNet's current initialization source is Torchvision's \code{resnet18-f37072fd.pth}, and MobileNet's recorded source is \code{mobilenet_v3_small-047dcff4.pth}, both under \url{https://download.pytorch.org/models/}. Inference restores complete trained states with pretrained downloading disabled. The original ResNet initialization file itself was not independently fingerprinted in the retained Colab metadata.
 
-The report follows the supplied DSA 8401 instructions; no institutional template or approved proposal was found. The ICIAP 2025 reference now uses Springer's final record: pages 26--39, DOI \code{10.1007/978-3-032-10192-1_3}, published 2 January 2026. Its conference year remains 2025; the bibliography uses the 2026 publication year. The original provider entries remain unchanged in \code{data/references.bib} and the prepared release; the BMVC citation and dataset attribution are retained.
+The report follows the supplied DSA 8401 instructions; no institutional template or approved proposal was found. The ICIAP 2025 reference now uses Springer's final record: pages 26--39, DOI \code{10.1007/978-3-032-10192-1_3}, published 2 January 2026. Its conference year remains 2025; the bibliography uses the 2026 publication year. The original provider entries remain unchanged in \code{data/references.bib} and the prepared release's BibTeX file; release notes identify the final published record. The BMVC citation and dataset attribution are retained.
 
 \clearpage
 \section{Rebuilding this document without rerunning experiments}
