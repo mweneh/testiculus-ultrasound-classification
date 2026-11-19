@@ -50,7 +50,7 @@ function Dropzone({ onFile, validating, inputRef }) {
       </button>
       <p className="mt-6 max-w-md text-xs leading-relaxed text-ink-3">
         The image stays in your browser until you press <span className="font-semibold text-ink-2">Run analysis</span>.
-        The server processes it in memory and does not store it.
+        The server does not retain it after the request.
       </p>
     </div>
   );

@@ -83,8 +83,9 @@ once per process, with weights supplied separately from the source/image.
 The **TesticulUS — Ultrasound Intelligence Lab** interface (`frontend/`, React +
 Vite + Tailwind CSS) demonstrates the frozen models without using the API
 documentation. It is compiled into static files and served by the existing
-FastAPI application at `/`; `/health`, `/predict`, `/explain` and `/docs` are
-unchanged and keep priority over the interface.
+FastAPI application at `/`. All API routes keep priority over the interface;
+the existing `/health` and `/predict` contracts are preserved and `/explain`
+adds Grad-CAM.
 
 It provides:
 
@@ -93,7 +94,7 @@ It provides:
   simulated.
 - Drag-and-drop or file selection with PNG/JPEG signature, 5 MiB and
   20 megapixel checks, preview and removal. The image is uploaded **only** when
-  **Run analysis** is pressed; the server processes it in memory.
+  **Run analysis** is pressed; the server does not retain it after the request.
 - An explicit model choice (no default model, matching the API).
 - The server's result: predicted class, **model score for the inhomogeneous
   class** (an uncalibrated softmax score, not a probability of disease), the
@@ -109,6 +110,11 @@ It provides:
 
 The interface makes no third-party requests (fonts are bundled) and is served
 with a same-origin Content-Security-Policy.
+Complete notices for the bundled fonts, icons and JavaScript dependencies are
+included in `frontend/public/THIRD_PARTY_NOTICES.txt` and served at
+`/THIRD_PARTY_NOTICES.txt`. These notices do not assign a licence to project
+code, datasets or checkpoints. Multipart parsing may use temporary files;
+uploads and decoded images are released after each request.
 
 ![Analysis workspace before an image is loaded](docs/images/web-interface-workspace.png)
 
@@ -152,7 +158,19 @@ docker compose up --build
 Compose configures all three models, and the service refuses to start if a
 configured checkpoint is missing. To serve a subset, use the `docker run`
 commands in [Docker](#docker) and set only the wanted `*_CHECKPOINT`
-variables; the interface then marks the others as unavailable. Set `PORT` to
+variables; the interface then marks the others as unavailable. For example,
+with just the ResNet18 checkpoint supplied in the prepared package directory:
+
+```bash
+docker compose build
+docker run --rm --read-only --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+  -p 127.0.0.1:8000:8000 \
+  --mount "type=bind,src=$PWD/artifacts/releases/models-v1.0.0,dst=/models,readonly" \
+  -e RESNET18_CHECKPOINT=/models/testiculus-resnet18-v1.pth \
+  testiculus-inference:web
+```
+
+Only that checkpoint is required for this command. Set `PORT` with Compose to
 publish on another local port. The container keeps the existing hardening: a
 non-root user, read-only root filesystem and checkpoint mount, plus (in
 Compose) dropped capabilities and `no-new-privileges`.
@@ -657,8 +675,9 @@ remain ignored; do not commit medical images, prediction CSVs or credentials.
 
 Release tag **`models-v1.0.0`** is prepared locally and **has not been published**.
 The GitHub release query returned “release not found” on 19 November 2026.
-Submission changes remain local pending an authorized source push; supply the
-matching checkout directly to an examiner until those commits are available.
+The reviewed source revision `b3567af` was pushed and verified on GitHub on
+19 November 2026; the browser interface is integrated into `main`. Source
+publication does not make the separately supplied checkpoints downloadable.
 The official alternative is **Strathmore University Virtual Campus — DSA 8401,
 Capstone Project (23 Nov) assignment submission**, supplying the matching source
 checkout and `artifacts/releases/models-v1.0.0/` package. **Upload and examiner
@@ -1082,6 +1101,16 @@ probabilities matched exactly. MobileNet differed by 6×10⁻⁸ with the same
 decision, because the local reference used two CPU threads and the container
 used one. The PyTorch layers came from the existing build cache; a clean-network
 build remains unverified, as stated in [Docker](#docker).
+
+The independent integration review reran **176 backend tests** with **two
+synthetic-training tests deselected**, plus the **four report checks** and
+**32 frontend tests**. The original seven commits were preserved. The review
+added bundled dependency notices and fixed mobile overflow with longer upload
+names. A rebuilt Docker image and headless browser passed prediction and HTTP
+Grad-CAM checks for all three trained models using synthetic pixels only; a
+ResNet18-only container also passed, with other models rejected as unavailable.
+The review did not run an optimizer or held-out inference. See
+[integration verification](report/frontend_integration_verification.json).
 
 Release preparation adds **18 passing tests** in `tests/test_release_assets.py`,
 including strict loading of the available final checkpoints, deterministic

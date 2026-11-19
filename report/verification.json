@@ -1,11 +1,11 @@
 {
-  "verified_utc": "2026-11-19T05:49:36.493336+00:00",
-  "report_pages": 22,
+  "verified_utc": "2026-11-19T10:04:19.504867+00:00",
+  "report_pages": 23,
   "abstract_words": 212,
   "resolved_citation_keys": 10,
   "unique_labels": 12,
   "build": "pdfLaTeX + BibTeX; successful final passes; no undefined references, citation warnings or overfull boxes",
-  "visual_review": "All 22 pages re-inspected as rendered layouts; physical pages 7, 14, 19 and 21 also reviewed at 110 dpi for the realistic-complication paragraph, efficiency caption, bibliography capitalization and examiner-access appendix.",
+  "visual_review": "Revised 23-page PDF rendered for inspection; targeted deployment, verification, references and reproducibility pages reviewed at larger scale.",
   "report_tests": {
     "passed": 4,
     "failed": 0,
@@ -24,24 +24,25 @@
     "sha256": "2b4957c569b4055ccc5be2c36db455af05ea7854643f74f4e0a3b66801495fc6"
   },
   "checkpoint_fingerprints_verified": true,
-  "model_execution": false,
+  "model_execution": true,
   "ultrasound_images_opened": false,
   "retraining": false,
   "test_inference": false,
   "threshold_changes": false,
-  "protected_tracked_artifacts_unchanged_from": "9e978eb",
+  "protected_tracked_artifacts_unchanged_from": "b3567af",
   "sha256": {
-    "capstone_report.tex": "907699cce30cd15971479806e1e87da6a0cae64d4685377279a8fbacf1ae0262",
-    "capstone_report.pdf": "8635bda0b3ac46567a65a7685f83b08f8da505747f02c4d37e88a26d48001e02",
+    "capstone_report.tex": "0bd105be8ef2aa511fb8d95dc01efd09115a018ae0b7ef83ee9c77ccec59281c",
+    "capstone_report.pdf": "6fe8184f14aba93e8f2b6b60a545a0e65ae65e20e4c079cf675ac61ed56f4e38",
     "references.bib": "983dc656c8a9d091a19de7ee112e7d8d7206b0e11372ab27d6130eb495b3befd",
     "evidence.json": "1f1cfdf588d2ac2a8ec4f7fd6b195b97bbea6673d3b7a061c3d754c044cad618",
     "figures/confusion_matrices.pdf": "ed1259b03e0d8792b345de333dfef79781ccd1b5a38f5d94bafda3d65ee0872f",
     "figures/training_histories.pdf": "74661158322a1c617ec24f0148b6a22f5a79f4fa5efc7e7db018fcc24db0c73d",
     "INDEPENDENT_AUDIT.md": "fb6909c63aaabca41925a14156a7234103133d1af073e25348235da238ec7be1",
-    "evidence_sources.md": "2e55018f7a46b42dc069c16f8a7f3bb8f7e9ae99cb18f1d27ad1eb27d019515f",
-    "submission_readiness.md": "9e6ce6370d29167587ba04add88f2770cff07db2bc9fd4e5ea55b9ad7af36384",
+    "evidence_sources.md": "129a0d8488c9829e70f1f8bf359b63daf6339ad890c31765dfe012263b477b2d",
+    "submission_readiness.md": "a2043cbbef3c72156c5a046c0e6d5fd691f6661cd99ecac1db5256604569f302",
     "check_document.py": "ad5bef5749080f0828a8b68abb8046d5a10894df698e9de300fc0686a734a398",
-    "README.md": "74e27c4f6c527cfb3eb6134bce6ec791cd80ee04b8d0aa2cf7bcf1ab09428f56"
+    "README.md": "c28adcde0fc4cd47eb04f9938eb37a9120e6147029e5c5f15e93804e26d15bf9",
+    "frontend_integration_verification.json": "ca1155e78b3c5c97710f05d1a1ea82cfa300a455b2d020a7d4a2e54844301f61"
   },
   "initial_report_verified_utc": "2026-11-18T14:38:39.965001+00:00",
   "revision_date": "2026-11-19",
@@ -71,18 +72,23 @@
     "retained_evidence": "synthetic-input verification only"
   },
   "protected_paths": [
-    "src/",
     "data/",
     "reports/",
-    "Dockerfile",
-    "requirements*.txt",
-    "tests/",
+    "release/",
+    "src/models/",
+    "src/data/",
+    "src/training.py",
+    "src/evaluation.py",
+    "src/inference.py",
+    "src/gradcam.py",
+    "src/threshold_config.py",
+    "src/threshold_selection.py",
     "report/evidence.json",
     "report/figures/",
     "report/generated/"
   ],
-  "checkpoint_loading_for_release_only": true,
-  "model_forward_performed": false,
+  "checkpoint_loading_for_release_only": false,
+  "model_forward_performed": true,
   "audit_follow_up": {
     "audit_baseline": "9e978eb455c4b277559de4100f547b5d8eb249b5",
     "audit_sha256": "fb6909c63aaabca41925a14156a7234103133d1af073e25348235da238ec7be1",
@@ -155,10 +161,22 @@
     "release_published": false
   },
   "supplemental_sha256": {
-    "README.md": "6de178208b131aaf9c89b96cf7e4d62362aff0207f5e1c9b67f961d4f6255933",
-    "AI_USE.md": "8792ee447fa959e532cb6c2ac46da490e3843fa43a5d679af4672f84970a914d",
+    "README.md": "e2441af252cc113b7e9bca7b56756431b9b9853d5b5ac26b97b4282ab224c3a7",
+    "AI_USE.md": "d634f871efe83e2b3d60d82aaac7457fceb0925060c5a1690f5072dd4c40db70",
     "release/manifest.json": "1970ebd8c81f608c74d39722d1084322509f0304e691df06dc24613be42b3923",
     "release/SHA256SUMS": "02ef5d2e903ca6f0d7586bb110b6c6860f6c2010abd03f80a31cae61f0cf3133",
     "release/RELEASE_NOTES.md": "f6ebb5b8c7383fba5601474688316af296e95639b35edc5d8c342844793dc724"
+  },
+  "model_execution_scope": "Application/browser integration with synthetic grayscale inputs only; no training or held-out inference.",
+  "frontend_integration": {
+    "record": "frontend_integration_verification.json",
+    "merge_commit": "e5b84d6303113252458e60b0be96fe9a535eeb6c",
+    "backend_passed": 176,
+    "synthetic_optimizer_tests_deselected": 2,
+    "frontend_passed": 32,
+    "report_passed": 4,
+    "synthetic_inputs_only": true,
+    "model_release_published": false,
+    "source_published_before_integration": "b3567af21196b97146a9ca4f2a03bc80decba253"
   }
 }

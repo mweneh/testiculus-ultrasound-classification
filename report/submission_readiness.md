@@ -6,7 +6,7 @@ preserved unchanged. Scientific experiments remain frozen.
 
 | Finding | Status | Evidence/action |
 |---|---|---|
-| F1: GitHub source behind local submission | Prepared; owner authorization pending | Fresh fetch found `origin/main` at `6d0a196`; no divergence. Before corrections, local `main` was 23 commits ahead. New correction commits also remain local. Normal push only; verify remote deliverables afterwards. |
+| F1: GitHub source behind local submission | Resolved for the original submission | Authorized normal push published `b3567af`; GitHub API/tree and branch SHA verification confirmed all 98 files. The subsequent browser interface is integrated in merge `e5b84d6`; final documentation accompanies it on `main`. |
 | F2: Examiner checkpoint access | Package verified; delivery pending | All 11 assets and three CPU checkpoint loads verified. No release exists. Rights review and explicit publication authorization remain required; fallback channel below is pending upload. |
 | F3: Architecture diagram/layout | Resolved | README Mermaid flowchart separates development and inference, names all models, and documents Grad-CAM/API/Docker. Exact diagram rendered locally to SVG. |
 | F4: Realistic complication | Resolved | Report §3.1 links natural imbalance, absent grouping metadata, integrity and correlated-image concerns to the requirement and bounds the mitigations. |
@@ -41,17 +41,22 @@ preserved unchanged. Scientific experiments remain frozen.
   No medical pixels, training or held-out inference were used for this work.
   The original comparison and exploratory MobileNet extension remain distinct.
 
-The current source checkout contains the report, API, Dockerfile, Grad-CAM,
-MobileNet implementation, documentation and tests. This statement does not
-assert that GitHub already contains the local deliverables. The historical
-150-pass application suite was not rerun. No new Docker build is claimed;
-cached-build evidence and the uncached dependency-download timeout remain the
-recorded deployment limits.
+The report, API, Dockerfile, Grad-CAM, MobileNet implementation, documentation
+and tests were published at `b3567af` and independently verified on GitHub.
+The later browser interface has been reviewed and merged without rewriting
+the seven frontend commits. Independent integration checks passed 176 backend
+tests with two synthetic-training tests deselected, four report tests and
+32 frontend tests. Docker/browser checks used synthetic inputs only, including
+all-model and ResNet18-only configurations. See
+[integration verification](frontend_integration_verification.json).
+The Docker build reused cached dependencies; the earlier uncached-download
+timeout remains a reproducibility limit.
 
 ## Source synchronization and release commands
 
-**No push, upload, release/tag creation or publication has been performed.**
-The exact normal push, after explicit owner authorization, is:
+**The source push was authorized and verified. No checkpoint upload, model
+release/tag creation or model publication has been performed.** Subsequent
+verified source updates use the authorized normal push:
 
 ```bash
 git push origin main:main
@@ -72,9 +77,9 @@ Before creating the release, compare the remote branch SHA to that full commit;
 after publication compare the tag's resolved commit and verify all public
 downloads. Do not claim a public release URL until those checks succeed.
 
-After an authorized push, verify that GitHub exposes the report/PDF, API,
-Dockerfile, Grad-CAM, MobileNet code, README/AI_USE and tests at the pushed SHA.
-Then update pending-source text. After verified publication, update the README
+After each source update, compare local and remote SHAs and verify the hosted
+files. Source verification at `b3567af` is complete. After verified model
+publication, update the README
 and report to the exact versioned release URL, refresh the evidence/status
 records and rebuild the PDF. These post-publication edits require no experiment
 changes.
@@ -82,9 +87,9 @@ changes.
 ## Examiner access and owner decisions
 
 Preferred route: GitHub source plus GitHub Release `models-v1.0.0`, with the
-repository URL submitted through Virtual Campus. Both source synchronization
-and release publication remain pending authorization; public checkpoint access
-is not claimed.
+repository URL submitted through Virtual Campus. Source publication is complete;
+checkpoint redistribution review and actual release publication remain pending.
+Public checkpoint access is not claimed.
 
 The owner-confirmed alternative is **Strathmore University Virtual Campus —
 DSA 8401, Capstone Project (23 Nov) assignment submission**. Supply the matching
@@ -92,7 +97,7 @@ source checkout and complete `artifacts/releases/models-v1.0.0/` package through
 that channel. **Upload and examiner-access verification are pending.** The
 owner-supplied assignment label does not change the report's recorded
 20 November deadline. Naming a channel does not demonstrate examiner access;
-F1/F2 remain open until the selected delivery route is completed and checked.
+F2 remains open until checkpoint delivery is completed and checked.
 
 Before publication or alternative delivery, the owner must resolve authority
 to distribute trained checkpoints, appropriate checkpoint licence/notices,

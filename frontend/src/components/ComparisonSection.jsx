@@ -183,7 +183,7 @@ function SummaryCards() {
                 <dd className="mt-0.5 font-mono text-[15px] text-ink-1">{milliseconds(record.latency.median)}</dd>
               </div>
             </dl>
-            <p className="eyebrow mt-3">Observed on this test partition</p>
+            <p className="eyebrow mt-3">Observed in the saved experiment</p>
             <ul className="mt-2 flex flex-wrap gap-1.5">
               {strengths[model.id].length ? (
                 strengths[model.id].map((item) => (

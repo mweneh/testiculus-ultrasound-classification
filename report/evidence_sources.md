@@ -215,3 +215,46 @@ remaining owner actions.
   ultrasound-pixel access, test inference, threshold/split/result changes or
   experimental-record regeneration occurred. Verification hashes are refreshed
   in `verification.json`.
+
+## Independent browser-interface integration (19 November 2026)
+
+- Reviewed the original seven commits (`0860e2a` through `e7b2f26`) against
+  `b3567af`. Existing prediction/health contracts, frozen thresholds, class
+  mappings and preprocessing are preserved. The browser consumes actual
+  `/health`, `/predict` and `/explain` responses; historical comparison values
+  are imported from the frozen tracked JSONs at build time.
+- `/explain` shares the 5 MiB/20-megapixel upload checks, uses a reentrant model
+  lock around prediction and attribution, returns a bounded 224×224 heatmap
+  and relies on the existing hook/mode cleanup. Invalid/unconfigured inputs
+  produce the documented status codes. This is a local research service, not
+  an audited public clinical service.
+- Two review findings were corrected: `7a64eef` retains complete bundled font
+  and production dependency notices; `1468b22` prevents grid overflow caused
+  by a longer upload filename at 390 pixels. A headless-browser regression
+  check verified the corrected layout and real backend responses on synthetic
+  pixels. Merge `e5b84d6` preserves the seven original commits and both fixes.
+- Independent checks: 176 backend tests passed, with the two fresh synthetic
+  optimizer tests deselected; four report checks passed; 32 frontend tests and
+  the production build passed. A Docker build and browser/API checks passed
+  for three trained models; a ResNet18-only container also passed, with the
+  unconfigured models returning 503. Dependency layers were cached; no fresh
+  network build is claimed. Full results are in
+  `frontend_integration_verification.json`.
+- The current integration opened no ultrasound pixels and ran no optimizer,
+  held-out inference or scientific evaluation. Earlier frontend work separately
+  documented one training-image demonstration, with private screenshots under
+  ignored artifacts. Those outputs were not used as anatomical evidence or
+  included in the report. The two tracked UI screenshots were inspected and
+  contain no uploaded image or medical pixels.
+- Outgoing paths/blobs were reviewed for credentials, raw images, checkpoints,
+  archives and large files. Only the two explicitly inspected, image-free
+  UI screenshots are permitted raster additions. This is a scoped check, not
+  an exhaustive security audit. Original experimental records, both threshold
+  configurations, checkpoints, splits, figures and numerical tables are
+  unchanged.
+- Source publication of `b3567af` was independently verified by GitHub API and
+  tree equality. The report/README now distinguish published source from the
+  still-unpublished checkpoint release. Redistribution review remains open;
+  this integration does not publish weights or modify release-package bytes.
+  The original independent audit is retained unchanged. PDF compilation,
+  visual inspection and hashes are refreshed in `verification.json`.

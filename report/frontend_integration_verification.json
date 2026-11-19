@@ -1,0 +1,143 @@
+{
+  "browser": {
+    "passed": true,
+    "models": 3,
+    "prediction_requests": 3,
+    "explanation_requests": 3,
+    "uploads_before_user_action": 0,
+    "external_requests": 0,
+    "browser_errors": [],
+    "mobile_horizontal_overflow": false
+  },
+  "all_models": {
+    "passed": true,
+    "models": [
+      "custom_cnn",
+      "resnet18",
+      "mobilenet_v3_small"
+    ],
+    "thresholds": {
+      "custom_cnn": {
+        "threshold": 0.4541136622428894
+      },
+      "resnet18": {
+        "threshold": 0.3251684010028839
+      },
+      "mobilenet_v3_small": {
+        "threshold": 0.5038942694664001
+      }
+    },
+    "non_root": true,
+    "root_read_only": true,
+    "checkpoints_read_only": true,
+    "http_explain_verified": true,
+    "upload_errors_verified": true
+  },
+  "resnet_only": {
+    "passed": true,
+    "models": [
+      "resnet18"
+    ],
+    "thresholds": {
+      "resnet18": {
+        "threshold": 0.3251684010028839
+      }
+    },
+    "non_root": true,
+    "root_read_only": true,
+    "checkpoints_read_only": true,
+    "http_explain_verified": true,
+    "upload_errors_verified": true
+  },
+  "image_tag": "testiculus-inference:integration-review",
+  "image_id": "sha256:faa0505737124464d0103d6055a9fa0194b71a419932cf06ecd6c912bd8cb559",
+  "synthetic_inputs_only": true,
+  "held_out_test_inference": false,
+  "training": false,
+  "checkpoints_unchanged": true,
+  "verified_utc": "2026-11-19T10:04:19.504867+00:00",
+  "reviewed_base": "b3567af21196b97146a9ca4f2a03bc80decba253",
+  "original_frontend_tip": "e7b2f26",
+  "integration_merge": "e5b84d6303113252458e60b0be96fe9a535eeb6c",
+  "original_commits_preserved": true,
+  "review_fixes": {
+    "7a64eef": "Retain complete bundled dependency/font notices",
+    "1468b22": "Prevent narrow-screen overflow with long upload names"
+  },
+  "backend_tests": {
+    "passed": 176,
+    "deselected": 2,
+    "failed": 0,
+    "command": "OMP_NUM_THREADS=1 .venv/bin/python -m pytest -q tests -k 'not synthetic_training_and_checkpoint_roundtrip and not mobilenet_frozen_backbone_training_checkpoint_and_timing'",
+    "excluded": "Both existing tests that optimize fresh temporary synthetic models",
+    "warning": "One existing Starlette TestClient deprecation warning"
+  },
+  "report_tests": {
+    "passed": 4,
+    "failed": 0
+  },
+  "frontend_tests": {
+    "passed": 32,
+    "failed": 0,
+    "command": "npm test -- --reporter=dot"
+  },
+  "production_build": {
+    "passed": true,
+    "command": "npm run build"
+  },
+  "docker_build": {
+    "passed": true,
+    "dependency_layers_cached": true,
+    "uncached_build_verified": false,
+    "compose_config_valid": true
+  },
+  "review": {
+    "backend_contracts_preserved": true,
+    "frontend_uses_actual_backend_responses": true,
+    "historical_metrics_from_tracked_records": true,
+    "gradcam_model_lock_and_cleanup_reviewed": true,
+    "medical_pixels_in_committed_screenshots": false,
+    "credential_scan": "Changed paths and outgoing blobs scanned for high-confidence credential patterns; not an exhaustive security audit",
+    "raw_data_or_checkpoints_committed": false
+  },
+  "model_release_published": false,
+  "scientific_records_changed": false,
+  "checkpoint_sha256": {
+    "custom_cnn": "10b56ec29c509f4b2f180a4d17b916c6c921245f88c4aa5d276b4cf29d47e04c",
+    "resnet18": "f6791f0707573674704a0ea2bd222d65591d709de6da8919e2dcbbae3744ace4",
+    "mobilenet_v3_small": "199afb1800167bb3c0242aa825ac78c5cbab9100c1a7d5cd2d78293a979bc43a"
+  },
+  "frontend_sources_sha256": {
+    "frontend/index.html": "236863ee193cb3775dbc2784bfcdb0fe41f4ac8e3febb053054378a311e66477",
+    "frontend/package-lock.json": "76e044a948515f0bd7ff0e03a357e281b68a3d206acb7610b22a90f448ab8a72",
+    "frontend/package.json": "24871ec93be50b02f09ae1ed4007058786ca304a46136074699309314dae59f5",
+    "frontend/postcss.config.js": "e32657baf631d7c5f4dc67b4b2ee0ec8e7d5b3c41860e09cddce7c0377cd80bc",
+    "frontend/public/THIRD_PARTY_NOTICES.txt": "bf7106381007a265a0cc6ec7e0222435cb80bfb8c86d0358404cba6703dacd4e",
+    "frontend/public/favicon.svg": "509fde282b5b7d2185fff060d8fa66170dbc034cf3d37287aeab31f322a7e04f",
+    "frontend/src/App.jsx": "ee765037ea43fbc17750c4c1d3175feb1fcc351d3e85adbee89b490889954ca6",
+    "frontend/src/App.test.jsx": "3d7ca52d5c1adbb343049811e28cc397d1dcea5dddbddf888b2efed6e98cd2d1",
+    "frontend/src/components/AboutSection.jsx": "7a9dbd9136778adbfbe0bbe07fe5a1c69859543deb5f1253e24815220cb114e7",
+    "frontend/src/components/ComparisonSection.jsx": "09356ef7c79dae11693d81c1bbbd45dca11a11e83821f55a41a4b880ae36ca7f",
+    "frontend/src/components/GradCamPanel.jsx": "f0c33fc4e9e767de591df60751d3776ca39061cf6a0e90becdb9882af1cefffb",
+    "frontend/src/components/Header.jsx": "2b8d4355c9cf4c5d92f7ea07cff570b112810aa3eb3d0d7adbc5825ecbd2fd94",
+    "frontend/src/components/HeatmapLayer.jsx": "fd7ef8be22fd8fa84f167f7cba2bb16030c10c7712e4bc9072b96baef12f8a5d",
+    "frontend/src/components/ImageViewer.jsx": "a5dd27f1b74aae1dca9b1132689d7d09ade3b5ca2d5b7dfea909a1876885eb27",
+    "frontend/src/components/ModelSelector.jsx": "e35bfa87a8c472ba68daf98eb8d834032c528ab91ccd77a169f6cde8323a0b91",
+    "frontend/src/components/ResultPanel.jsx": "5f1719423478a8ae4035ac89711fda9a94cc8294805a99de836bc03889db311b",
+    "frontend/src/components/ui.jsx": "7a0809b68f84085445fba79b74844861919da6b4dc7650f76139f1c92d5fad21",
+    "frontend/src/hooks/useHealth.js": "ed8d66efc481031927e0cbfde8a65d0e18374b7e3eb393731788ff7814bdc0e8",
+    "frontend/src/index.css": "66b4e3f1cd2dd7fc9fa6198256be44953e367227ccf3daa77791dd65da1b0730",
+    "frontend/src/lib/api.js": "ac524d8ec470fd8df8812cbfe4783ee7865f3750d5f7372abca7c26c18bd8726",
+    "frontend/src/lib/api.test.js": "594c9e16a6ce8503ae5586b875727e87c87f8a15f5a83fed41c46ba9faf7d09e",
+    "frontend/src/lib/format.js": "41bcdee76f9aae92632ebd9be6075d342653d4fbff5abe0d3a6db267d1c6df27",
+    "frontend/src/lib/models.js": "932a136b2db1e4ae19643f57ac85e66f4410d4564dad1f89ab9944029423b9d9",
+    "frontend/src/lib/records.js": "1bee36917c9148a71899c411eb90c29a2f9a0fdebafbdc805e376cd3798c4073",
+    "frontend/src/lib/records.test.js": "c6fa8dd1a2d07dc7bf9904c9f2e3118f9bb56da3e510ce3919490790becac5b6",
+    "frontend/src/lib/upload.js": "2625109394197650bd7e53d5fa889ccf144edbd39509312bdfb4232129248482",
+    "frontend/src/lib/upload.test.js": "035a24f343961e7d621bd91fe612bb4541b11c7771667900ea49e43853c9d4ee",
+    "frontend/src/main.jsx": "d7b3cde8b0ca31498a0ff2cc8847262d314eacfb45bec23237e21fd26e096706",
+    "frontend/src/test/setup.js": "c622f216e6cb21fbe27015bf5e6421ad3d1d7e82aa753a0ab8d32a41d08cfce1",
+    "frontend/tailwind.config.js": "6e876cbba4ebc0daae42d7ee3e835c14bb08e77d41f76f89a67a6880af08074b",
+    "frontend/vite.config.js": "0a52cbbd67ae93317cf1204b0ca65eef91dd3047ef016118afacaca42b0bcb9e"
+  }
+}

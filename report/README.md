@@ -87,3 +87,15 @@ Strathmore University Virtual Campus — DSA 8401, **Capstone Project (23 Nov)**
 assignment submission. Upload and examiner-access verification are pending;
 GitHub Releases remains preferred. This assignment label does not revise the
 report's recorded deadline.
+
+## Browser-interface integration
+
+The approved frontend is preserved in merge `e5b84d6`, with two review
+corrections for bundled notices and mobile overflow. The report now briefly
+describes the same-process browser interface and two-stage Docker build,
+records the independent test scope and removes obsolete pending-source-push
+wording. The original source publication at `b3567af` was verified on GitHub.
+Checkpoint publication remains pending redistribution review; no public model
+download is claimed. [Integration evidence](frontend_integration_verification.json)
+records the backend/frontend, browser and Docker checks with synthetic inputs.
+Scientific results, thresholds, tables and aggregate figures remain unchanged.

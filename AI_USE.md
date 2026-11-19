@@ -259,8 +259,32 @@ inhomogeneous class, not a probability of disease, keeps MobileNetV3-Small
 labelled post-hoc exploratory, and states Grad-CAM's limits. No checkpoint,
 threshold, split, training record or evaluation result was changed; no model
 was trained and no held-out test image was processed. Browser verification used
-one training-partition image. All 182 backend tests, the four report tests, 32
+one training-partition image. The full 182-test run (including four report tests), 32
 frontend tests and the container acceptance check passed on 19 November 2026.
 The student remains responsible for reviewing the interface wording and
 deciding whether to merge or publish it.
+
+## Independent frontend integration review (19 November 2026)
+
+The assistant reviewed the seven frontend commits against `main`, including
+API contracts, model/threshold lookup, upload handling, Grad-CAM cleanup and
+locking, static serving, Docker mounts and outgoing files. Live inference uses
+backend responses; comparison values come from frozen tracked records. The two
+committed screenshots were inspected and contain no uploaded images.
+
+The review added complete bundled dependency/font notices and corrected mobile
+overflow with long upload names. It also clarified transient upload retention
+and that summary cards combine test metrics with separately measured CPU/model
+properties. The original seven commits were preserved in merge `e5b84d6`.
+
+Independent checks passed: 176 backend tests with the two synthetic optimizer
+tests deselected, four report checks and 32 frontend tests; a production build,
+Docker build and headless-browser verification of actual prediction/Grad-CAM
+responses for all three trained models on synthetic inputs. A ResNet18-only
+container verified partial-checkpoint operation and unavailable-model errors.
+The Docker build used cached dependencies; an uncached build is not claimed.
+No optimizer ran, no ultrasound pixels or held-out images were opened, and no
+experimental record, threshold or checkpoint changed. The report received a
+limited deployment/status update and was rebuilt. The user's authorization
+covers source integration only; model files remain private and the release is unpublished.
 
