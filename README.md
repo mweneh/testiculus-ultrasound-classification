@@ -28,6 +28,51 @@ Weights, prediction rows and medical images remain outside Git.
 This is a research application. Patient and acquisition-centre independence
 are unverified; the system is not clinically validated or suitable for diagnosis.
 
+## System architecture
+
+Model development and deployed inference use separate paths. The test manifest
+was reserved for final evaluation after each experiment's checkpoint and
+validation threshold were frozen. The diagram describes the completed work;
+the research experiments must not be rerun for submission preparation.
+
+```mermaid
+flowchart TB
+  subgraph development [Model development - completed and frozen]
+    dataset["TesticulUS labelled images"] --> manifests["Stratified image-level split manifests"]
+    manifests --> train["Training manifest"]
+    manifests --> val["Validation manifest"]
+    manifests --> test["Held-out test manifest"]
+    train --> models["Custom CNN / ResNet18 / MobileNetV3-Small"]
+    models --> fitting["Training with class-weighted loss"]
+    fitting --> selection["Best validation-loss checkpoint"]
+    val --> selection
+    selection --> thresholds["Validation predictions: maximize positive-class F1"]
+    val --> thresholds
+    selection --> frozen["Frozen checkpoints and model-specific thresholds"]
+    thresholds --> frozen
+    frozen --> evaluation["Completed final evaluation and saved results"]
+    test --> evaluation
+  end
+  subgraph deployment [Deployed inference - no training or threshold fitting]
+    distribution["Separate checkpoint package / planned GitHub Release"]
+    mounted["Verified checkpoint and threshold files mounted read-only"]
+    image["Supplied research image"] --> preprocess["Grayscale / resize / model-specific normalization"]
+    preprocess --> inference["Loaded model: positive-class probability and threshold decision"]
+    mounted --> inference
+    inference --> cam["Optional Grad-CAM tooling"]
+    inference --> api["FastAPI prediction endpoint"]
+    api --> docker["Docker service: class / probability / decision threshold"]
+    distribution --> mounted
+  end
+  frozen --> distribution
+```
+
+MobileNetV3-Small is a post-hoc exploratory extension to the original
+Custom CNN/ResNet18 comparison. Grad-CAM is available through the CLI; archived
+verification uses synthetic inputs and supports no anatomical interpretation.
+The Docker service loads one selected model per process, with weights supplied
+separately from the source/image.
+
 ## Frozen final test results
 
 Both models used the same 129 images: 104 homogeneous and 25 inhomogeneous.
@@ -136,7 +181,8 @@ TesticulUS is credited to Morelli et al. and the dataset contributors.
 The report bibliography uses the ICIAP paper's
 [final publisher record](https://link.springer.com/chapter/10.1007/978-3-032-10192-1_3):
 pages 26–39, published 2 January 2026 for the ICIAP 2025 conference. The original
-provider BibTeX and prepared release files remain unchanged.
+provider BibTeX is preserved; the prepared release notes also identify the final
+published record alongside the supplied entries.
 
 The licence permits noncommercial sharing and adaptation with attribution and
 ShareAlike. Original dataset images and adapted ultrasound visualizations are
@@ -504,6 +550,12 @@ Release tag **`models-v1.0.0`** is prepared locally and **has not been published
 The GitHub release query returned “release not found” on 19 November 2026.
 Submission changes remain local pending an authorized source push; supply the
 matching checkout directly to an examiner until those commits are available.
+The official alternative is **Strathmore University Virtual Campus — DSA 8401,
+Capstone Project (23 Nov) assignment submission**, supplying the matching source
+checkout and `artifacts/releases/models-v1.0.0/` package. **Upload and examiner
+access verification are pending.** The preferred arrangement remains GitHub
+Releases with the repository URL submitted through Virtual Campus. The assignment
+label is owner-supplied; it does not revise the report's recorded deadline.
 Downloads become available only after redistribution review and explicit
 authorization to publish. Until then, these commands may report that the
 release is unavailable. See [release assets and publication commands](release/README.md),
@@ -713,6 +765,9 @@ localization or evidence of clinical validity.
 
 ## Docker
 
+The `docker run` configuration below supplies the deployment equivalent to a
+Compose file: model selection, port mapping and read-only checkpoint mounts.
+
 Build the CPU inference image:
 
 ```bash
@@ -879,7 +934,7 @@ OMP_NUM_THREADS=1 python -m pytest -q tests/test_release_assets.py
 ```text
 src/
   data/       dataset loader, transforms, split and similarity audit
-  models/     custom CNN and ResNet18 definitions
+  models/     Custom CNN, ResNet18 and exploratory MobileNetV3-Small definitions
   training.py training CLI and checkpoint loader
   evaluation.py checkpoint evaluation CLI and metrics
   inference.py  single-image checkpoint inference
