@@ -32,3 +32,8 @@ reports/similarity_contact_sheet.png
 .vscode/
 
 instructions.md
+
+# Web interface
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/

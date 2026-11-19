@@ -1,0 +1,30 @@
+# Single-command local demonstration of the API and web interface.
+#
+#   docker compose up --build
+#   open http://127.0.0.1:8000
+#
+# Checkpoints are never baked into the image. By default the prepared release
+# package is mounted read-only; override CHECKPOINT_DIR and the *_FILE names
+# for another layout (see README "Web interface").
+services:
+  testiculus:
+    build: .
+    image: testiculus-inference:web
+    ports:
+      - "127.0.0.1:${PORT:-8000}:8000"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    volumes:
+      - type: bind
+        source: ${CHECKPOINT_DIR:-./artifacts/releases/models-v1.0.0}
+        target: /models
+        read_only: true
+    environment:
+      CUSTOM_CNN_CHECKPOINT: /models/${CUSTOM_CNN_FILE:-testiculus-custom-cnn-v1.pth}
+      RESNET18_CHECKPOINT: /models/${RESNET18_FILE:-testiculus-resnet18-v1.pth}
+      MOBILENET_V3_SMALL_CHECKPOINT: /models/${MOBILENET_V3_SMALL_FILE:-testiculus-mobilenet-v3-small-v1.pth}

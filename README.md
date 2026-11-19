@@ -28,6 +28,9 @@ Weights, prediction rows and medical images remain outside Git.
 This is a research application. Patient and acquisition-centre independence
 are unverified; the system is not clinically validated or suitable for diagnosis.
 
+A browser [web interface](#web-interface) is served by the same FastAPI process:
+`docker compose up --build`, then open <http://127.0.0.1:8000>.
+
 ## System architecture
 
 Model development and deployed inference use separate paths. The test manifest
@@ -59,19 +62,125 @@ flowchart TB
     image["Supplied research image"] --> preprocess["Grayscale / resize / model-specific normalization"]
     preprocess --> inference["Loaded model: positive-class probability and threshold decision"]
     mounted --> inference
-    inference --> cam["Optional Grad-CAM tooling"]
-    inference --> api["FastAPI prediction endpoint"]
+    inference --> cam["Optional Grad-CAM (CLI and /explain)"]
+    inference --> api["FastAPI /health, /predict, /explain"]
+    cam --> api
     api --> docker["Docker service: class / probability / decision threshold"]
+    docker --> web["Web interface at / (same origin, static build)"]
     distribution --> mounted
   end
   frozen --> distribution
 ```
 
 MobileNetV3-Small is a post-hoc exploratory extension to the original
-Custom CNN/ResNet18 comparison. Grad-CAM is available through the CLI; archived
-verification uses synthetic inputs and supports no anatomical interpretation.
-The Docker service loads one selected model per process, with weights supplied
-separately from the source/image.
+Custom CNN/ResNet18 comparison. Grad-CAM is available through the CLI and the
+`/explain` endpoint; archived verification uses synthetic inputs and supports
+no anatomical interpretation. The Docker service loads each configured model
+once per process, with weights supplied separately from the source/image.
+
+## Web interface
+
+The **TesticulUS — Ultrasound Intelligence Lab** interface (`frontend/`, React +
+Vite + Tailwind CSS) demonstrates the frozen models without using the API
+documentation. It is compiled into static files and served by the existing
+FastAPI application at `/`; `/health`, `/predict`, `/explain` and `/docs` are
+unchanged and keep priority over the interface.
+
+It provides:
+
+- API status and per-model availability from `/health`. A model whose
+  checkpoint the server did not load is shown as unable to run; nothing is
+  simulated.
+- Drag-and-drop or file selection with PNG/JPEG signature, 5 MiB and
+  20 megapixel checks, preview and removal. The image is uploaded **only** when
+  **Run analysis** is pressed; the server processes it in memory.
+- An explicit model choice (no default model, matching the API).
+- The server's result: predicted class, **model score for the inhomogeneous
+  class** (an uncalibrated softmax score, not a probability of disease), the
+  frozen validation-selected threshold, model and status.
+- Optional Grad-CAM overlay from `POST /explain` with an original/overlay
+  toggle and strength control, plus its interpretive limits.
+- The historical comparison of all three models, read at build time from the
+  tracked records `reports/mobilenet_exploratory_results.json` and
+  `report/evidence.json`, clearly separated from the live result. MobileNet
+  is labelled post-hoc exploratory throughout.
+- Dataset, split, limitations, both TesticulUS citations and the CC BY-NC-SA
+  4.0 licence.
+
+The interface makes no third-party requests (fonts are bundled) and is served
+with a same-origin Content-Security-Policy.
+
+![Analysis workspace before an image is loaded](docs/images/web-interface-workspace.png)
+
+![Frozen evaluation record in the web interface](docs/images/web-interface-evaluation.png)
+
+These README screenshots were captured with no image loaded, so they contain
+no dataset pixels. Screenshots showing a TesticulUS image, prediction and
+Grad-CAM overlay are adaptations under CC BY-NC-SA 4.0 and are kept outside
+Git (`artifacts/frontend_screenshots/`).
+
+### Examiner demonstration (Docker, one command)
+
+1. Obtain the repository and change into it.
+2. Supply the three trained checkpoints. By default Compose mounts the release
+   package directory `artifacts/releases/models-v1.0.0/` (flat names
+   `testiculus-custom-cnn-v1.pth`, `testiculus-resnet18-v1.pth`,
+   `testiculus-mobilenet-v3-small-v1.pth`); see
+   [checkpoint installation](#checkpoint-installation-from-github-releases).
+3. Build and start the service:
+
+   ```bash
+   docker compose up --build
+   ```
+
+4. Open <http://127.0.0.1:8000>.
+5. Upload a PNG or JPEG ultrasound image, select a model and press
+   **Run analysis**. Optionally press **Generate Grad-CAM for this result**.
+6. Stop with `Ctrl+C`, then `docker compose down`.
+
+For the original `training_runs/<model>/best_model.pth` layout, override the
+mount and file names:
+
+```bash
+CHECKPOINT_DIR=./training_runs \
+CUSTOM_CNN_FILE=custom_cnn/best_model.pth \
+RESNET18_FILE=resnet18/best_model.pth \
+MOBILENET_V3_SMALL_FILE=mobilenet_v3_small/best_model.pth \
+docker compose up --build
+```
+
+Compose configures all three models, and the service refuses to start if a
+configured checkpoint is missing. To serve a subset, use the `docker run`
+commands in [Docker](#docker) and set only the wanted `*_CHECKPOINT`
+variables; the interface then marks the others as unavailable. Set `PORT` to
+publish on another local port. The container keeps the existing hardening: a
+non-root user, read-only root filesystem and checkpoint mount, plus (in
+Compose) dropped capabilities and `no-new-privileges`.
+
+### Local development
+
+Requires Node.js 18.18 or newer. Start the API as in
+[FastAPI application](#fastapi-application) on port 8000, then:
+
+```bash
+cd frontend
+npm ci
+npm run dev        # http://127.0.0.1:5173, proxies API routes to :8000
+npm test           # Vitest + Testing Library, mocked API
+npm run build      # writes frontend/dist/
+```
+
+Set `TESTICULUS_API` to proxy to another API address during development.
+The development tools (Vite 6, Vitest 3) were chosen to run on Node.js 18.
+`npm audit` reports advisories in Vitest 3's mocker and its `tinypool`
+dependency that are fixed only in Vitest releases requiring Node.js 20+.
+They affect the local test runner only: production dependencies report no
+advisories, and the Docker image contains only the compiled static files. After
+`npm run build`, a locally started `uvicorn src.api:app` serves the interface
+from `frontend/dist/` automatically; `FRONTEND_DIST` selects another build
+directory (it must contain `index.html`). Without a build, the service runs
+API-only, as before. `frontend/node_modules/` and `frontend/dist/` are not
+tracked.
 
 ## Frozen final test results
 
@@ -713,6 +822,19 @@ multipart `file`. It returns `model_type`, `prediction` (0 or 1), `class_name`,
 `positive_class`, `probability_class_1`, the frozen `threshold` and its
 `threshold_source`. There is no request-level threshold override. `/health`
 reports loaded models and thresholds; `/docs` provides the OpenAPI interface.
+
+`POST /explain` takes the same `model_type` and multipart `file`, applies the
+same upload validation and status codes, and returns the `/predict` fields plus
+a `gradcam` object: `target_class` (the frozen-threshold prediction, as in the
+CLI default), `target_layer`, `score` (`pre-softmax class logit`),
+`constant_map` and `heatmap_png_base64`, the 224×224 model-input heatmap as an
+8-bit grayscale PNG. Prediction and attribution run under the same model lock.
+The map is a coarse attribution, not a segmentation or evidence of clinical
+validity; nothing is persisted.
+
+When a compiled interface exists (`frontend/dist/`, or `FRONTEND_DIST`), it is
+mounted at `/` after all API routes. Interface responses carry a same-origin
+Content-Security-Policy and cache headers; `/docs` is unaffected.
 An unconfigured model returns 503; invalid model parameters/missing files return
 422; empty/undecodable images return 400; unsupported formats return 415; images
 over 5 MiB or 20 megapixels return 413. The application does not persist uploads.
@@ -765,8 +887,14 @@ localization or evidence of clinical validity.
 
 ## Docker
 
-The `docker run` configuration below supplies the deployment equivalent to a
-Compose file: model selection, port mapping and read-only checkpoint mounts.
+[`compose.yaml`](compose.yaml) gives the single-command demonstration described
+in [Web interface](#web-interface). The `docker run` commands below remain
+equivalent and allow serving a subset of models.
+
+The Dockerfile has two stages. A pinned `node:24-alpine` stage runs `npm ci`
+and compiles the interface; only its static `dist/` files are copied into the
+unchanged Python serving stage, so Node.js and `node_modules` are not in the
+final image.
 
 Build the CPU inference image:
 
@@ -774,8 +902,11 @@ Build the CPU inference image:
 docker build -t testiculus-inference:local .
 ```
 
-The build context allows only source code, serving requirements, Dockerfile
-and the two model-specific frozen threshold records. Datasets, checkpoints,
+The build context allows only source code, serving requirements, Dockerfile,
+the two model-specific frozen threshold records, the interface sources and
+the two frozen records the interface bundles
+(`reports/mobilenet_exploratory_results.json`, `report/evidence.json`).
+Interface tests are excluded. Datasets, checkpoints,
 histories, prediction artifacts, credentials, Git metadata and virtual
 environments are excluded.
 The image contains no trained weights. Mount downloaded checkpoints read-only:
@@ -917,6 +1048,41 @@ run had **150 passed**, with one Starlette TestClient deprecation warning
 and no deselections. The earlier exclusion and 128/129 counts above describe
 the initial frozen two-model application phase.
 
+The web-interface work added 10 API tests in `tests/test_api.py`: `/explain`
+contract, agreement with `/predict` and with a direct `compute_gradcam` call,
+honest constant-map reporting, shared upload validation and 503 for
+unconfigured models; plus frontend mounting without shadowing API routes,
+API-only operation without a build and rejection of an explicit directory
+lacking `index.html`. On 19 November 2026 the complete `python -m pytest -q`
+run (including the two existing synthetic-training tests, which train fresh
+temporary models only) had **182 passed** with the same single Starlette
+deprecation warning, and the four report tests passed. That count is the 172
+previously existing tests plus these 10.
+
+The interface has its own **32 Vitest tests** (`cd frontend && npm test`) with
+a mocked API: upload validation and limits, API contract parsing and error
+mapping, the frozen-record values shown in the comparison, no upload before
+**Run analysis**, unavailable checkpoints, an unreachable API, result
+rendering as a model score, 503/400 handling, stale results after a model
+change, Grad-CAM gating and overlay toggle, image removal, and labelling of
+historical versus live results.
+
+The web interface was also checked end to end in headless Chrome against the
+two-stage Docker image (`docker compose up`, all three release-package
+checkpoints) at 1440×900 and 390×844, using one **training-partition** image
+(`inhomogeneous/128.png`) so that no held-out test image was processed. Checks
+covered the full upload, model selection, prediction and Grad-CAM flow with no
+console errors, Content-Security-Policy violations or horizontal overflow;
+keyboard order and radio arrow-key selection; reduced motion; and, using a
+separate two-model container, MobileNet shown as unavailable and rejected with
+503. The container prediction for that image matched local inference exactly.
+`python -m src.container_smoke --image-tag testiculus-inference:web
+--include-mobilenet` also passed for the new image. Custom CNN and ResNet18
+probabilities matched exactly. MobileNet differed by 6×10⁻⁸ with the same
+decision, because the local reference used two CPU threads and the container
+used one. The PyTorch layers came from the existing build cache; a clean-network
+build remains unverified, as stated in [Docker](#docker).
+
 Release preparation adds **18 passing tests** in `tests/test_release_assets.py`,
 including strict loading of the available final checkpoints, deterministic
 package construction, checksum enforcement, mocked GitHub downloads and failure
@@ -938,7 +1104,7 @@ src/
   training.py training CLI and checkpoint loader
   evaluation.py checkpoint evaluation CLI and metrics
   inference.py  single-image checkpoint inference
-  api.py        FastAPI lifespan, health and prediction routes
+  api.py        FastAPI lifespan, health, prediction and Grad-CAM routes; serves the web interface
   gradcam.py    Grad-CAM and overlay CLI
   experiment_summary.py frozen result checks and summary generator
   artifact_verification.py original artifacts and trained-model acceptance
@@ -950,7 +1116,9 @@ src/
   threshold_selection.py validation-only selection and record verification
 data/splits/  tracked CSV manifests with relative paths and labels
 reports/      tracked split/similarity audit and frozen validation threshold record
-Dockerfile    CPU serving image; checkpoints mounted separately
+frontend/     React/Vite/Tailwind web interface (src/, tests alongside sources)
+Dockerfile    two-stage build: interface assets + CPU serving image; checkpoints mounted separately
+compose.yaml  single-command local demonstration (read-only checkpoint mount)
 tests/        automated tests; synthetic training/evaluation only
 ```
 
