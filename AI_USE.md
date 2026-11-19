@@ -8,6 +8,31 @@ API remains available with its existing contract. This step passed 37 API/safety
 tests and 34 frontend tests; the production frontend build passed. No checkpoint
 transfer, public deployment, model training or held-out inference was performed.
 
+AI assistance then implemented private Hugging Face package bootstrap, immutable
+revision/privacy checks, source-manifest SHA-256 verification, credential-safe
+HTTPS redirects, model-subset selection, a narrow offline Space source bundle,
+and a local/hosted inference comparison helper. It consulted current official
+platform documentation and recorded outstanding account, cost and hosting-rights
+conditions. No plugin connection to Hugging Face was available; the local CLI
+was not authenticated. No token was requested in chat or persisted by the runtime.
+
+The CPU Docker profile was checked locally under a two-CPU quota and 2 GiB cap.
+Three-model startup took 20.38 seconds and peak cgroup memory was 482.39 MiB.
+API probabilities matched local CPU inference on the same verified training image,
+`inhomogeneous/128.png` (TesticulUS, Morelli et al., CC BY-NC-SA 4.0), manually
+reviewed for visible identifiers. No test image was opened. Additional synthetic
+inputs checked spooled-upload cleanup and desktop/mobile browser prediction and
+Grad-CAM. No anatomical or clinical interpretation was made. All temporary test
+containers were removed. The broader suite passed 201 backend tests with two
+synthetic optimizer tests excluded, 34 frontend tests and four report tests.
+Build/cache scope, operational timings, hashes, actual local checks and pending
+public checks are recorded in `deployment/huggingface/verification.json` and its
+deployment guide. These smoke timings do not replace the frozen scientific CPU
+benchmark. Checkpoints and scientific records/report were preserved. No source
+push, checkpoint transfer or hosted deployment was performed; the public
+deployment objective remains incomplete pending the stated approvals and live
+verification.
+
 AI assistance was used to inspect the repository and implement the data split
 and similarity-audit tooling, training and evaluation utilities, tests, and
 project documentation. It also integrated the user-provided Google Colab

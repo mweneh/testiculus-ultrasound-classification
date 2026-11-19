@@ -31,6 +31,29 @@ are unverified; the system is not clinically validated or suitable for diagnosis
 A browser [web interface](#web-interface) is served by the same FastAPI process:
 `docker compose up --build`, then open <http://127.0.0.1:8000>.
 
+**Public application: not deployed yet; no verified public HTTPS URL is available.**
+The Docker-based [Hugging Face deployment guide](deployment/huggingface/README.md)
+prepares a public inference interface with **private** checkpoint storage,
+independently of the unpublished GitHub model release. Account/hosting approval,
+the private-hosting rights review and live verification remain pending. Source
+publication on GitHub does not make model weights publicly downloadable.
+
+The Space profile binds to `0.0.0.0:7860` and serves the same React interface,
+`/health`, `/predict` and `/explain` on CPU. It verifies an immutable private Hub
+package against the recorded SHA-256 hashes before loading models. Set server-side
+secrets `MODEL_REPO_ID` and repository-read-only `HF_TOKEN`; variables are
+`DEPLOYMENT_MODE=space`, `PORT=7860`, `MODEL_REVISION=<full model-repo commit SHA>`
+and optional `MODEL_TYPES=resnet18,mobilenet_v3_small` to load two models.
+The guide covers the source-only Space bundle, private checkpoint installation,
+local port-7860 Docker commands, resource measurements, costs and anonymous
+examiner verification. Missing models remain disabled in the interface.
+
+Public mode bounds upload bodies/duration, concurrent work and request rate;
+interactive API documentation is disabled there. Upload only anonymized images
+you are authorized to share. **Research and educational use only. Not for clinical
+diagnosis.** No hosted inference, live private download or public URL is claimed
+from local container verification.
+
 ## System architecture
 
 Model development and deployed inference use separate paths. The test manifest
@@ -939,7 +962,7 @@ docker run --rm --read-only --tmpfs /tmp:rw,noexec,nosuid,size=64m \
   testiculus-inference:local
 ```
 
-The service runs as UID/GID 10001, with one worker and a `/health` Docker
+The current image runs as UID/GID 1000 (compatible with Docker Spaces), with one worker and a `/health` Docker
 health check. Mounted files must be readable by that UID. The default device
 is CPU; this image does not configure CUDA. Use the same health and prediction
 requests shown above.

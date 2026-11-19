@@ -1,0 +1,191 @@
+{
+  "publicly_deployed": false,
+  "hf_private_download_live_verified": false,
+  "training": false,
+  "held_out_test_inference": false,
+  "demonstration_image": {
+    "training_manifest_relative_path": "inhomogeneous/128.png",
+    "licence": "CC BY-NC-SA 4.0",
+    "credit": "Morelli et al. / TesticulUS contributors",
+    "identifiers_visible_on_manual_review": false
+  },
+  "resource_scope": "Local Docker, 2 CPU quota, 2 GiB memory cap; not Hugging Face measurements",
+  "all_models": {
+    "container_start_to_ready_seconds": 20.379674681986216,
+    "before": {
+      "cgroup_memory_current_bytes": 494592000,
+      "cgroup_memory_peak_bytes": 505819136,
+      "cgroup_memory_max_bytes": 2147483648,
+      "process_rss_bytes": 395882496
+    },
+    "after_demo": {
+      "cgroup_memory_current_bytes": 413724672,
+      "cgroup_memory_peak_bytes": 505819136,
+      "cgroup_memory_max_bytes": 2147483648,
+      "process_rss_bytes": 390193152
+    },
+    "after_additional_requests": {
+      "cgroup_memory_current_bytes": 402407424,
+      "cgroup_memory_peak_bytes": 505819136,
+      "cgroup_memory_max_bytes": 2147483648,
+      "process_rss_bytes": 387633152
+    },
+    "verification": {
+      "loaded_model_count": 3,
+      "models": {
+        "custom_cnn": {
+          "prediction": 1,
+          "threshold": 0.4541136622428894,
+          "probability_class_1": 0.5767890214920044,
+          "local_probability_absolute_difference": 0.0,
+          "prediction_http_seconds": 0.755916601017816,
+          "explain_http_seconds": 0.3760155600029975,
+          "gradcam_verified": true
+        },
+        "resnet18": {
+          "prediction": 1,
+          "threshold": 0.3251684010028839,
+          "probability_class_1": 0.6819666624069214,
+          "local_probability_absolute_difference": 0.0,
+          "prediction_http_seconds": 0.7365153059945442,
+          "explain_http_seconds": 0.8148235039843712,
+          "gradcam_verified": true
+        },
+        "mobilenet_v3_small": {
+          "prediction": 1,
+          "threshold": 0.5038942694664001,
+          "probability_class_1": 0.6380519270896912,
+          "local_probability_absolute_difference": 0.0,
+          "prediction_http_seconds": 0.5388783359958325,
+          "explain_http_seconds": 0.19114623899804428,
+          "gradcam_verified": true
+        }
+      },
+      "image_sha256": "7c68960c489d396d1c492caf2bdf9cd9985ac2569a102e6c6521f6be054e2777",
+      "single_non_test_demo": true,
+      "held_out_test_evaluation": false,
+      "training": false
+    },
+    "rate_limit_verified": true,
+    "body_limit_verified": true,
+    "no_upload_temp_files_retained": true,
+    "temporary_file_probe": {
+      "open_file_descriptors": 7,
+      "open_temporary_upload_files": 0,
+      "runtime_temp_directories": [
+        "torchinductor_inference"
+      ],
+      "spooled_synthetic_upload_bytes_greater_than": 1048576
+    },
+    "oom_kills": 0
+  },
+  "two_model_profile": {
+    "loads": true,
+    "container_start_to_ready_seconds": 23.994582904997515,
+    "memory": {
+      "cgroup_memory_current_bytes": 356904960,
+      "cgroup_memory_peak_bytes": 400347136,
+      "cgroup_memory_max_bytes": 2147483648,
+      "process_rss_bytes": 337108992
+    }
+  },
+  "browser": {
+    "passed": true,
+    "models": 3,
+    "prediction_requests": 3,
+    "explanation_requests": 3,
+    "uploads_before_user_action": 0,
+    "external_requests": 0,
+    "browser_errors": [],
+    "mobile_horizontal_overflow": false
+  },
+  "local_profile": {
+    "port": 8000,
+    "ready": true,
+    "docs_preserved": true
+  },
+  "checkpoint_hashes_unchanged": true,
+  "image_id": "sha256:add640a9cb5009ce3581702815c8cb61a619fcdfb301d2938f4f51cf7c32ce9c",
+  "verified_utc": "2026-11-19T14:43:57.457518+00:00",
+  "source_base_revision": "639fb5eeb6677cba63e0b0b541e69f89d0f89a36",
+  "tests": {
+    "backend_passed": 201,
+    "deselected": 2,
+    "excluded": [
+      "synthetic_training_and_checkpoint_roundtrip",
+      "mobilenet_frozen_backbone_training_checkpoint_and_timing"
+    ],
+    "warning": "Existing Starlette TestClient/httpx deprecation",
+    "frontend_passed": 34,
+    "report_passed": 4,
+    "production_frontend_build": "passed",
+    "docker_build": "passed; Python dependencies downloaded freshly; base/frontend dependency cache reused",
+    "compose_config": "passed",
+    "report_document_check": "passed; report unchanged"
+  },
+  "verified_source_sha256": {
+    "Dockerfile": "a0c00bf1c633f5bcfc3a6146275ddf25e26d6da53fdab8d294cbc80a63d2770e",
+    ".dockerignore": "5c81c6e818619a856ad6d9b7629d570157a7f588bc57925b2e98af6eb5f5ee16",
+    "requirements-api.txt": "dc075aed806694c80ea18d62419182e75f93564b44af2b98140dbddece87ef54",
+    "requirements-serving.txt": "5f468364da2fae2bdf8184363e43583a70b5ec5db34a1acb6ddd8492815a430e",
+    "release/manifest.json": "1970ebd8c81f608c74d39722d1084322509f0304e691df06dc24613be42b3923",
+    "reports/validation_thresholds.json": "57c39b8495118a91946f54b9c888e1e08b0eaaa9f23ec35d76b668c6022b1349",
+    "reports/mobilenet_v3_small_thresholds.json": "162ec32cddb3b3c84c14c2c11cbe9692fe84800d3bd9e99c42c076bfd47a33dd",
+    "src/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/api.py": "0e07dd7fba26ec082215d5a61a5b314fbf3badaaecf5a089122e2a0a57100763",
+    "src/artifact_verification.py": "1939fdf76246260ec16fa9db5ba3239a972db419f5fcf94288efa38bd916bd4f",
+    "src/container_smoke.py": "6c362945b19741915d37e77ac7d7626581bb22dcca193b006692e05daef11c89",
+    "src/cpu_benchmark.py": "ff96c882de2e67da8cccb7e38c670d1f5f31b8a497e0b37ad433ee87755175a9",
+    "src/data/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/data/audit_dataset.py": "4f4f4eb2897bcb2650800ab06f7f3836b9d2b69dd5e456103c61dbb0424b2524",
+    "src/data/dataset.py": "7b8cb1a92570e08c9faba308995fd9964a233914a8e6af9b4414d7c61760e89b",
+    "src/data/similarity_review.py": "58ef1fc8c54f3a7ee5be6158f88dd1e394e2ed0f999377347536ded70103233b",
+    "src/data/splits.py": "bcb93d11e61c6fa2f2fdea9ba45c7bf8d3b228c26dd11d516f4fa3b43fa00ff3",
+    "src/data/transforms.py": "8f01e42ebc1feeecc44397eb0b2c386507dd7a4ace59f3fe9504b85f3fd73b3b",
+    "src/evaluation.py": "2b13b401038ba7796d50cff2de4bc596c3eb6d6c7984dbf0d03ad54b73acdcc8",
+    "src/experiment_summary.py": "40d495cbf0c6fdb626cda840021c28723b54b06372978bc924025bea1afd2e36",
+    "src/exploratory_evaluation.py": "12ce0d402e6ed1ab50bbf3208f9318e3acfe5e5f7ebd7764bc5be9b75221b06e",
+    "src/gradcam.py": "2531ba9a9371f5450a85c5b4937cedba95ad1e2653d8f4e322e094ffd2d47910",
+    "src/inference.py": "a858a839e270d0ba15281faf6cab5f202d0dac0e50ca014d3bf1305e7c9f2a93",
+    "src/model_comparison.py": "c0f6404b7098d65bbfcbf6b9806e1642724c02ec8905968e6b5ad49779db9a54",
+    "src/models/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/models/architectures.py": "f81e336f14bd896a86727fb45aa31ddcfb0d2b627fe1f17cf681b7aa8fd149be",
+    "src/private_assets.py": "239d060cd20cbdc548ee1f2aabf3a3ee34ec0501b38ed5b8d7dbf7b5476bf0d5",
+    "src/public_api.py": "f4f30883d9ad745d193dd7ad374a3ea2c55ae93038abdcb224ff69bd0d62b842",
+    "src/release_assets.py": "a32729d5e3184c0e5535b1078ab1f3b783039e424e9c29c17c1d94a8e09f3f58",
+    "src/serve.py": "3fe7d0e83a5d78d39bab36d2d9afae25963f316ec6a152204576d1de16ab7d8d",
+    "src/threshold_config.py": "63e480af4f79008e920cf94f12ed4ae8dd5498a732dc3de957bb7cf0686c393f",
+    "src/threshold_selection.py": "118f8f90c2564ee22418087db8d583bbf0b23f71436fc19559f4940938cefd96",
+    "src/training.py": "ae3f29553f83d683236a2472e01eabafed1f9ff674e64a117d8e75d68d2a87e8",
+    "frontend/src/App.jsx": "ee765037ea43fbc17750c4c1d3175feb1fcc351d3e85adbee89b490889954ca6",
+    "frontend/src/components/AboutSection.jsx": "7a9dbd9136778adbfbe0bbe07fe5a1c69859543deb5f1253e24815220cb114e7",
+    "frontend/src/components/ComparisonSection.jsx": "09356ef7c79dae11693d81c1bbbd45dca11a11e83821f55a41a4b880ae36ca7f",
+    "frontend/src/components/GradCamPanel.jsx": "f0c33fc4e9e767de591df60751d3776ca39061cf6a0e90becdb9882af1cefffb",
+    "frontend/src/components/Header.jsx": "2b8d4355c9cf4c5d92f7ea07cff570b112810aa3eb3d0d7adbc5825ecbd2fd94",
+    "frontend/src/components/HeatmapLayer.jsx": "fd7ef8be22fd8fa84f167f7cba2bb16030c10c7712e4bc9072b96baef12f8a5d",
+    "frontend/src/components/ImageViewer.jsx": "cf3ce599a529f293c510d024630d969c3691dec357ea932b2e860370c9c55822",
+    "frontend/src/components/ModelSelector.jsx": "e35bfa87a8c472ba68daf98eb8d834032c528ab91ccd77a169f6cde8323a0b91",
+    "frontend/src/components/ResultPanel.jsx": "5f1719423478a8ae4035ac89711fda9a94cc8294805a99de836bc03889db311b",
+    "frontend/src/components/ui.jsx": "7a0809b68f84085445fba79b74844861919da6b4dc7650f76139f1c92d5fad21",
+    "frontend/src/hooks/useHealth.js": "ed8d66efc481031927e0cbfde8a65d0e18374b7e3eb393731788ff7814bdc0e8",
+    "frontend/src/index.css": "66b4e3f1cd2dd7fc9fa6198256be44953e367227ccf3daa77791dd65da1b0730",
+    "frontend/src/lib/api.js": "548f578aa6ae2b05783ef5585201e19f286f0cd3a93bac4a8ff7e252ff979056",
+    "frontend/src/lib/format.js": "41bcdee76f9aae92632ebd9be6075d342653d4fbff5abe0d3a6db267d1c6df27",
+    "frontend/src/lib/models.js": "932a136b2db1e4ae19643f57ac85e66f4410d4564dad1f89ab9944029423b9d9",
+    "frontend/src/lib/records.js": "1bee36917c9148a71899c411eb90c29a2f9a0fdebafbdc805e376cd3798c4073",
+    "frontend/src/lib/upload.js": "2625109394197650bd7e53d5fa889ccf144edbd39509312bdfb4232129248482",
+    "frontend/src/main.jsx": "d7b3cde8b0ca31498a0ff2cc8847262d314eacfb45bec23237e21fd26e096706",
+    "frontend/package.json": "24871ec93be50b02f09ae1ed4007058786ca304a46136074699309314dae59f5",
+    "frontend/package-lock.json": "76e044a948515f0bd7ff0e03a357e281b68a3d206acb7610b22a90f448ab8a72",
+    "frontend/public/THIRD_PARTY_NOTICES.txt": "bf7106381007a265a0cc6ec7e0222435cb80bfb8c86d0358404cba6703dacd4e",
+    "deployment/prepare_space.py": "5a855bee96ae1ac703d557308ed9a34d83cd27604a3dc253d9b1abf2bd503f02",
+    "deployment/verify_app.py": "cabb8a5aa4b949179cdaa218757fbf7dc4071daa1a725f6adf78e5a525059f9f"
+  },
+  "limitations": [
+    "Local timings are one-request HTTP smoke measurements, include network/decoding/preprocessing, and are not the frozen research CPU benchmark.",
+    "Local startup used a mounted verified package and excludes a live private-Hub download.",
+    "Short local memory observation is not a soak test or a hosted capacity guarantee.",
+    "Space account, names, hosting rights, plan/spending approval and public deployment remain pending.",
+    "No paid hardware or storage provisioned; no source or model transfer performed."
+  ]
+}
