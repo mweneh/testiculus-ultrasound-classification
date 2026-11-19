@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.staticfiles import StaticFiles
 import numpy as np
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field
@@ -19,6 +20,7 @@ from src.inference import CheckpointPredictor
 from src.threshold_config import MODEL_NAMES
 
 
+DEFAULT_FRONTEND_DIST = Path(__file__).resolve().parents[1] / "frontend" / "dist"
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 MAX_IMAGE_PIXELS = 20_000_000
 ModelType = Literal["custom_cnn", "resnet18", "mobilenet_v3_small"]
@@ -94,10 +96,59 @@ def explain_prediction(predictor: CheckpointPredictor, image: Image.Image) -> di
     return result
 
 
+class FrontendFiles(StaticFiles):
+    """Serve the compiled web interface with restrictive browser headers.
+
+    The policy applies only to interface files, so FastAPI's /docs page keeps
+    its default behaviour. Hashed build assets are immutable; the HTML entry
+    point is revalidated so a rebuilt interface is picked up immediately.
+    """
+
+    SECURITY_HEADERS = {
+        "Content-Security-Policy": (
+            "default-src 'self'; script-src 'self'; style-src 'self'; "
+            "img-src 'self' blob: data:; font-src 'self'; connect-src 'self'; "
+            "object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+        ),
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "no-referrer",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    }
+
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        response.headers.update(self.SECURITY_HEADERS)
+        response.headers["Cache-Control"] = (
+            "public, max-age=31536000, immutable" if path.startswith("assets/") else "no-cache"
+        )
+        return response
+
+
+def resolve_frontend_dir(frontend_dir: Path | None = None) -> Path | None:
+    """Return a built interface directory, or None for an API-only service.
+
+    An explicitly requested directory (argument or FRONTEND_DIST) must contain
+    index.html; the default repository build location is optional.
+    """
+    explicit = frontend_dir if frontend_dir is not None else os.environ.get("FRONTEND_DIST")
+    candidate = Path(explicit) if explicit else DEFAULT_FRONTEND_DIST
+    if (candidate / "index.html").is_file():
+        return candidate
+    if explicit:
+        raise RuntimeError(f"Frontend directory {candidate} does not contain index.html")
+    return None
+
+
 def create_app(checkpoint_paths: dict[str, Path] | None = None, *,
                threshold_config: Path | None = None,
-               device: str | None = None) -> FastAPI:
-    """Load configured models once at startup; never substitute random weights."""
+               device: str | None = None,
+               frontend_dir: Path | None = None) -> FastAPI:
+    """Load configured models once at startup; never substitute random weights.
+
+    When a compiled web interface is available it is mounted at ``/`` after
+    every API route, so /health, /predict, /explain and /docs keep priority.
+    """
+    static_dir = resolve_frontend_dir(frontend_dir)
 
     @asynccontextmanager
     async def lifespan(application: FastAPI):
@@ -163,6 +214,9 @@ def create_app(checkpoint_paths: dict[str, Path] | None = None, *,
         predictor = configured_predictor(model_type)
         with _read_upload(file) as decoded:
             return explain_prediction(predictor, decoded)
+
+    if static_dir is not None:
+        application.mount("/", FrontendFiles(directory=static_dir, html=True), name="frontend")
 
     return application
 

@@ -214,3 +214,46 @@ def test_explain_limits_and_unconfigured_model(client, checkpoints, monkeypatch)
         response = single.post("/explain?model_type=custom_cnn", files={"file": ("x", image_bytes())})
         assert response.status_code == 503
         assert response.json()["detail"] == "Model custom_cnn is not configured"
+
+
+@pytest.fixture
+def frontend_dist(tmp_path):
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "index.html").write_text("<!doctype html><title>TesticulUS</title><div id=root></div>")
+    (tmp_path / "assets" / "app-abc123.js").write_text("console.log('ok')")
+    return tmp_path
+
+
+def test_frontend_is_served_without_shadowing_api_routes(checkpoints, frontend_dist):
+    app = api.create_app({"custom_cnn": checkpoints["custom_cnn"]}, device="cpu", frontend_dir=frontend_dist)
+    with TestClient(app) as client:
+        page = client.get("/")
+        assert page.status_code == 200 and "TesticulUS" in page.text
+        assert page.headers["cache-control"] == "no-cache"
+        assert "frame-ancestors 'none'" in page.headers["content-security-policy"]
+        asset = client.get("/assets/app-abc123.js")
+        assert asset.status_code == 200 and "immutable" in asset.headers["cache-control"]
+        assert client.get("/health").json()["status"] == "ready"
+        assert client.post("/predict?model_type=custom_cnn", files={"file": ("x", image_bytes())}).status_code == 200
+        assert {"/health", "/predict", "/explain"} <= set(client.get("/openapi.json").json()["paths"])
+        docs = client.get("/docs")
+        assert docs.status_code == 200 and "content-security-policy" not in docs.headers
+        assert client.get("/missing.js").status_code == 404
+
+
+def test_api_only_service_when_no_frontend_build(checkpoints, tmp_path, monkeypatch):
+    monkeypatch.delenv("FRONTEND_DIST", raising=False)
+    monkeypatch.setattr(api, "DEFAULT_FRONTEND_DIST", tmp_path / "absent")
+    with TestClient(api.create_app({"custom_cnn": checkpoints["custom_cnn"]}, device="cpu")) as client:
+        assert client.get("/").status_code == 404
+        assert client.get("/health").status_code == 200
+
+
+def test_explicit_frontend_directory_must_contain_index(tmp_path, monkeypatch, frontend_dist):
+    with pytest.raises(RuntimeError, match="index.html"):
+        api.create_app({}, frontend_dir=tmp_path / "empty")
+    monkeypatch.setenv("FRONTEND_DIST", str(tmp_path / "empty"))
+    with pytest.raises(RuntimeError, match="index.html"):
+        api.create_app({})
+    monkeypatch.setenv("FRONTEND_DIST", str(frontend_dist))
+    assert api.resolve_frontend_dir() == frontend_dist
