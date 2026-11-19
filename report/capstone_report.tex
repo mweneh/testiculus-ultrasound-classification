@@ -45,6 +45,7 @@
 {\large Capstone Project Report\par}
 \vfill
 {Prepared: 18 November 2026\par}
+{Revised: 19 November 2026\par}
 {Submission deadline: 20 November 2026\par}
 \vspace{10mm}
 \begin{minipage}{0.84\textwidth}
@@ -90,7 +91,7 @@ The contribution is an evidence-linked comparison and working research applicati
 
 \section{Related work and technique justification}
 \subsection{TesticulUS classification and segmentation studies}
-\citet{2025ICIAP} study testicular inhomogeneity classification using ResNet-based supervised and unsupervised pretraining, including diffusion-generated ultrasound data. Their findings motivate investigating initialization when target labels are scarce. The present study does not reproduce their synthetic-data pipeline or evaluation design, and its metrics should not be read as a direct replication or a leaderboard comparison. In particular, synthetic pretraining and its additional data were not used here.
+In their ICIAP 2025 paper, \citet{2025ICIAP} study testicular inhomogeneity classification using ResNet-based supervised and unsupervised pretraining, including diffusion-generated ultrasound data. Their findings motivate investigating initialization when target labels are scarce. The present study does not reproduce their synthetic-data pipeline or evaluation design, and its metrics should not be read as a direct replication or a leaderboard comparison. In particular, synthetic pretraining and its additional data were not used here.
 
 \citet{2026BMVC} introduce the real multicentre TesticulUS release and Cond-UNet, an organ-conditioned segmentation architecture. This provides important dataset context and illustrates an efficiency-oriented approach to ultrasound analysis. However, Cond-UNet predicts segmentation masks; it is not one of this project's classification models. The available masks could support a future region-of-interest experiment, but introducing segmentation would change the present input definition and require a separately designed comparison. The official resources distinguish the earlier synthetic release from the later real-image release \citep{dataset}.
 
@@ -323,6 +324,8 @@ No archived original-ultrasound Grad-CAM images were found in the available resu
 \subsection{Deployment and reproducibility verification}
 The previously completed development suite contains 150 passing tests, with no deselections and one Starlette TestClient deprecation warning. It covers data/split integrity, transforms, model interfaces, checkpoint restoration, thresholds, API behaviour, Grad-CAM and exploratory evaluation guards. This is the latest recorded application-suite result, not a new full-suite execution during report preparation. Four additional report-specific checks audit saved numeric evidence and generated tables without model execution.
 
+Subsequent release preparation passed 18 tooling tests and one repository-hygiene test. It verified strict CPU loading of all three final checkpoints, preprocessing metadata and frozen thresholds without a model forward pass or dataset-image access (\code{release/verification.json}).
+
 Earlier application checks reported 128 passes with one synthetic training test excluded. That test trains a fresh temporary CNN on random tensors for one epoch; it does not train a research checkpoint. The latest 150-test run included it and the analogous synthetic MobileNet test. The historical exclusion does not indicate a failed research experiment. Synthetic test training must also be distinguished from the separately authorized, now-frozen MobileNet research run.
 
 For the original checkpoints, local CPU inference was compared with saved Colab probabilities on two validation samples per model. Maximum absolute differences were approximately $2.086\times10^{-7}$ for the Custom CNN and $1.788\times10^{-7}$ for ResNet18, with matching decisions. API and local command-line probabilities agreed in the sampled checks. MobileNet's validation threshold-candidate sample differed from its saved probability by approximately $1.192\times10^{-7}$ across local thread settings, with the same decision and exact API/CLI agreement.
@@ -406,12 +409,32 @@ Docker & \code{Dockerfile}; \code{.dockerignore}; saved original/MobileNet conta
 Tests and disclosure & \code{tests/}; \code{docs/mobilenet_experiment.md}; \code{AI_USE.md}; report-only tests. \\\bottomrule
 \end{longtable}
 
-The original Custom CNN and ResNet18 trained checkpoints and evaluation artifacts were supplied from Google Drive under \code{MyDrive/Capstone/}, with local paths mirroring \code{training_runs/} and \code{results/}. The exploratory MobileNet checkpoint was produced locally and is also supplied separately. Trained state fingerprints and threshold-record fingerprints are retained in the verification JSONs. Hashes support consistency with the supplied bytes; they do not authenticate an independently archived Colab execution.
+The original Custom CNN and ResNet18 checkpoints and artifacts were supplied from Google Drive under \code{MyDrive/Capstone/}, mirrored in \code{training_runs/} and \code{results/}; the exploratory MobileNet checkpoint was produced locally. This describes historical provenance. Source code is maintained at \url{https://github.com/mweneh/testiculus-ultrasound-classification}; the chosen checkpoint distribution channel is separate GitHub Releases. Examiners should use the matching supplied source checkout pending an authorized push of the submission commits. The prepared tag \code{models-v1.0.0} was not found by a GitHub release query on 19 November 2026. Public checkpoint download is therefore not claimed. Owner review of redistribution terms and authorized publication remain outstanding; \code{release/README.md} records that step.
+
+\begin{samepage}
+The locally supplied package is in \path{artifacts/releases/models-v1.0.0/}. It contains both complete threshold JSONs and these checkpoints:
+\begin{itemize}
+\item Custom CNN: \code{testiculus-custom-cnn-v1.pth}.
+\item ResNet18: \code{testiculus-resnet18-v1.pth}.
+\item Exploratory MobileNet: \code{testiculus-mobilenet-v3-small-v1.pth}.
+\end{itemize}
+\end{samepage}
+Examiners can use the README's Python 3.12 serving environment (verified host: 3.12.3), verify \code{SHA256SUMS} from the package directory and use the following commands from the repository root:
+\begin{verbatim}
+PKG=artifacts/releases/models-v1.0.0
+python -m src.release_assets verify --package "$PKG"
+python -m src.inference --device cpu \
+  --checkpoint "$PKG/testiculus-resnet18-v1.pth" \
+  --threshold-config "$PKG/validation_thresholds.json" \
+  --image /path/to/research-image.png
+\end{verbatim}
+The verifier checks assets against the trusted source manifest before strict CPU loading. Custom CNN uses the same threshold JSON; MobileNet uses \path{mobilenet_v3_small_thresholds.json}. After publication, the optional downloader installs under \path{artifacts/checkpoints/models-v1.0.0/}; the same commands accept that directory. The README also gives a read-only Docker mount for these flat asset names. Checkpoint binaries remain outside ordinary Git commits. Hashes establish consistency with supplied bytes, not independently authenticated Colab provenance.
 
 ResNet's current initialization source is Torchvision's \code{resnet18-f37072fd.pth}, and MobileNet's recorded source is \code{mobilenet_v3_small-047dcff4.pth}, both under \url{https://download.pytorch.org/models/}. Inference restores complete trained states with pretrained downloading disabled. The original ResNet initialization file itself was not independently fingerprinted in the retained Colab metadata.
 
-The report follows the supplied DSA 8401 instructions' emphasis on data pipeline quality, modelling/evaluation, technique justification, deployment and clear limitations. No institutional report template or approved proposal was found. The provider-supplied BibTeX entries were retained as requested. One bibliographic issue remains for author review: the 2025 entry says pages 1--12, while the publisher volume lists pages 26--39. No DOI or replacement pagination was invented.
+The report follows the supplied DSA 8401 instructions; no institutional template or approved proposal was found. The ICIAP 2025 reference now uses Springer's final record: pages 26--39, DOI \code{10.1007/978-3-032-10192-1_3}, published 2 January 2026. Its conference year remains 2025; the bibliography uses the 2026 publication year. The original provider entries remain unchanged in \code{data/references.bib} and the prepared release; the BMVC citation and dataset attribution are retained.
 
+\clearpage
 \section{Rebuilding this document without rerunning experiments}
 From the repository root, the following checks read saved records and never open ultrasound images or execute models:
 \begin{verbatim}
@@ -431,5 +454,5 @@ pdflatex -interaction=nonstopmode -halt-on-error capstone_report.tex
 
 The full application suite's recorded 150-pass result is distinct from the report's four additional checks. The full suite is not rerun here because report preparation does not require synthetic model optimization. Inference and Docker execution commands are maintained in the repository README and \code{docs/mobilenet_experiment.md}; they are not duplicated as experimental methods. Existing training/test commands document the frozen work and must not be rerun to revise these results.
 
-Remaining author checks are approval of the final prose and scope statement, publication pagination, institutional submission details, and confirmation that the separately distributed checkpoints/artifacts are accessible to the examiner. These checks do not require altering any scientific result.
+Remaining author checks are approval of the final prose and scope statement, institutional submission details, redistribution review and authorized release publication, and confirmation of examiner access to the separately supplied artifacts. These checks do not require altering any scientific result.
 \end{document}

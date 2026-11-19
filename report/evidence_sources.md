@@ -1,14 +1,16 @@
 # Report evidence and unresolved information
 
-The report describes the completed repository at development baseline `4dfd678`.
+The scientific experiments describe development baseline `4dfd678`. The targeted
+submission revision on 19 November 2026 also incorporates the distribution
+tooling/documentation committed in `38aa5d1`, without changing experiments.
 The course instructions were read from the supplied `DSA8401 Capstone Project.pdf`
 (5 pages). They prescribe problem framing, technique justification, results,
 limitations, reproducible scripts and API/Docker deployment; they provide no
 report template or page limit. The PDF calls the submission individual. No
 approved proposal was supplied. Student identity was supplied directly by the
 student: David Ongaro Mauti Ethan, 191204. No supervisor identity is inferred.
-The requested submission deadline is 20 November 2026; this report is prepared
-on 18 November 2026.
+The requested submission deadline is 20 November 2026; the report was initially
+prepared on 18 November and revised on 19 November 2026.
 
 ## Numerical evidence
 
@@ -37,13 +39,20 @@ it does not perform test inference or optimize a test threshold.
 | Efficiency table | `reports/model_efficiency.json`, `src/cpu_benchmark.py` | 50 raw measurements/model, 10 warm-ups; model-forward timing only |
 | Application verification | `reports/artifact_verification.json`, `reports/mobilenet_application_verification.json` | Two validation samples/original model, one MobileNet validation threshold sample; synthetic Grad-CAM |
 | Container verification | `reports/{container_verification,mobilenet_container_verification}.json`, `docs/mobilenet_experiment.md` | Synthetic uploads with trained checkpoints; cached build passed; fresh dependency download timed out |
+| Checkpoint distribution | `release/{manifest,verification}.json`, `release/SHA256SUMS`, `release/README.md`; local package | All three source checkpoint fingerprints and all package assets rechecked; publication remains outstanding |
 | Test-suite count | `docs/mobilenet_experiment.md`, `README.md`, `AI_USE.md` | Latest previously verified suite: 150 passed, no deselections, one deprecation warning; report-only checks recorded separately |
 
 ## Literature and attribution
 
-Both provider-supplied BibTeX entries are retained verbatim in `references.bib`
-from `data/references.bib`. The official dataset page and original papers were
-consulted on 18 November 2026. The supplied local `testiculus-real.pdf` states
+The report's ICIAP reference now follows the final publisher record, verified on
+19 November 2026: pages 26–39; DOI `10.1007/978-3-032-10192-1_3`; first online
+2 January 2026. ICIAP 2025 is the conference year; 2026 is the version-of-record
+publication year, so the report's author–year citations now distinguish the two
+2026 Morelli papers. The BibTeX key `2025ICIAP` is retained. Only the report's
+publication fields change; its authors/title and the BMVC entry are preserved.
+The original provider entries remain byte-identical in `data/references.bib`
+and the prepared release, preserving release hashes. The official dataset page
+and original papers were consulted on 18 November 2026. The supplied local `testiculus-real.pdf` states
 that the release is fully anonymized and reports provider ethics approval;
 this report attributes those statements to the provider and does not claim
 separate institutional approval for this student project.
@@ -53,6 +62,8 @@ Primary sources checked:
 - Dataset: <https://ditto.ing.unimore.it/testiculus/>.
 - Morelli 2025 author manuscript: <https://federicobolelli.it/pub_files/2025iciap.pdf>;
   institutional record: <https://iris.unimore.it/handle/11380/1381588>.
+- Final ICIAP publisher record:
+  <https://link.springer.com/chapter/10.1007/978-3-032-10192-1_3>.
 - Morelli 2026 author manuscript (also supplied locally):
   <https://federicobolelli.it/media/publications/pdfs/0475.pdf>.
 - ResNet: <https://arxiv.org/abs/1512.03385>.
@@ -93,14 +104,51 @@ Primary sources checked:
    inference. Do not interpret rounded differences as significant.
 9. No new clean-environment install or uncached Docker build was repeated for
    this writing task. Prior cached-image verification is the deployment evidence.
-10. The supplied 2025 BibTeX says pages 1–12; Springer's published volume lists
-    pages 26–39: <https://link.springer.com/book/10.1007/978-3-032-10192-1>.
-    The requested supplied entry is preserved; the author should decide whether
-    to update pagination against the final publisher record before submission.
+10. The supplied ICIAP BibTeX's pagination discrepancy is resolved in the report:
+    pages 26–39 and publication year 2026 follow the publisher chapter record.
+    Original provider/release files remain unchanged as historical records.
 11. README and the earlier AI_USE opening said similarity review was pending
     despite the completed review in the audit. This documentation discrepancy
     is corrected alongside the report, using the completed audit. No
     underlying split or experimental record is changed.
-12. Checkpoints remain excluded from Git. A reviewer needs the separately
-    supplied Google Drive artifacts and dataset access to run the complete
-    pipeline; the tracked report, tables and plots rebuild without them.
+12. Checkpoints remain excluded from Git. The planned distribution channel is
+    GitHub Releases; the original two-model Google Drive transfer is historical
+    provenance. Pending publication, an examiner needs the locally supplied
+    package or original checkpoints. Dataset access is needed for full pipeline
+    reproduction, but not a single prediction on a separately supplied image.
+    The tracked report, tables and plots rebuild without either.
+
+## Submission-finalization checks (19 November 2026)
+
+- Read-only command `gh release view models-v1.0.0 --repo
+  mweneh/testiculus-ultrasound-classification --json
+  tagName,isDraft,publishedAt,url,assets` returned `release not found`. The
+  initial Snap CLI invocation could not run inside the sandbox; the read-only
+  retry outside the sandbox completed with that result. No release URL or
+  public download availability is asserted in the report. Authorization to
+  publish and owner resolution of weight-redistribution questions remain
+  outstanding. Submission commits also require an authorized source push;
+  the examiner workflow explicitly uses a matching supplied checkout until
+  then. No upload, tag creation or push was performed.
+- The local `artifacts/releases/models-v1.0.0/` package matches its trusted
+  manifest, all asset hashes and both full threshold records. Original source
+  checkpoint bytes also match the frozen release manifest. The package and
+  its notices/citation files were not changed during this report revision.
+- Path-name inspection under `artifacts/`, `results/` and `reports/` found no
+  Grad-CAM/heatmap/overlay artifacts. Existing JSON evidence identifies only
+  synthetic Grad-CAM verification. The report retains its limitation; no
+  ultrasound image was opened or generated.
+- Serving documentation and report use Python 3.12 (host verification 3.12.3),
+  pinned `requirements-serving.txt`, CPU loading, the same model-specific
+  threshold files, and checkpoint assets outside Git. Original checkpoints
+  remain under `training_runs/`; the supplied package is under
+  `artifacts/releases/`; future downloader installation is under
+  `artifacts/checkpoints/`. All package paths use the pinned `models-v1.0.0` tag.
+- README now supplies a Docker mount/environment mapping for flat release
+  filenames. This is a static documentation update, not a new Docker run.
+  The report's cached-build success and uncached-download timeout are unchanged.
+- Scientific tables, figures, evidence snapshot, splits, model code, thresholds
+  and original experimental records remain unchanged. Report checks read saved
+  numeric artifacts only; no training, inference or test evaluation is repeated.
+  Final compilation, visual inspection and test results are recorded in
+  `verification.json`.

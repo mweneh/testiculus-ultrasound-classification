@@ -1,11 +1,11 @@
 {
-  "verified_utc": "2026-11-18T14:38:39.965001+00:00",
-  "report_pages": 21,
+  "verified_utc": "2026-11-19T04:53:36.015613+00:00",
+  "report_pages": 22,
   "abstract_words": 212,
   "resolved_citation_keys": 10,
   "unique_labels": 12,
   "build": "pdfLaTeX + BibTeX; successful final passes; no undefined references, citation warnings or overfull boxes",
-  "visual_review": "All 21 pages rendered and inspected; tables/figures also inspected at larger scale; confusion-matrix labels adjusted for readability.",
+  "visual_review": "All 22 pages inspected as rendered layouts; revised bibliography and appendices also inspected at larger scale.",
   "report_tests": {
     "passed": 4,
     "failed": 0,
@@ -14,7 +14,8 @@
   "application_suite": {
     "previously_recorded_passes": 150,
     "rerun_during_report_preparation": false,
-    "current_collected_tests_including_report_checks": 154
+    "initial_report_phase_collected_tests": 154,
+    "release_tooling_recorded_passes": 18
   },
   "numeric_verification": "All manifests, saved test metrics, validation sweeps and histories match report evidence; original artifacts unchanged.",
   "saved_dataset_audit": {
@@ -28,13 +29,40 @@
   "retraining": false,
   "test_inference": false,
   "threshold_changes": false,
-  "protected_tracked_artifacts_unchanged_from": "4dfd678",
+  "protected_tracked_artifacts_unchanged_from": "38aa5d1",
   "sha256": {
-    "capstone_report.tex": "a7ce144c23c096a3084492eb27acfe607e16df626ab175796c97554307651392",
-    "capstone_report.pdf": "3a2e3f670af800b374d3be42a8f3bc6f9345e0cfbef15b219ce62102f11c9edd",
-    "references.bib": "68acd89acc762d7c152c60ca7c100b400583808f6d2ef278dd4ad5a28dea1f6e",
+    "capstone_report.tex": "92c79549734d645ce7cf8b6a34ddfb6a0ef7a900bf82641b4e4517da15414538",
+    "capstone_report.pdf": "ca7e50844f0eae9e9a52eb272bf173e9da9fa93b66fe6de45dc317e2550a2054",
+    "references.bib": "45d410c7badd97df6c1a31a04f02589b055f82f1d23341eedcf65bad43cab95e",
     "evidence.json": "1f1cfdf588d2ac2a8ec4f7fd6b195b97bbea6673d3b7a061c3d754c044cad618",
     "figures/confusion_matrices.pdf": "ed1259b03e0d8792b345de333dfef79781ccd1b5a38f5d94bafda3d65ee0872f",
     "figures/training_histories.pdf": "74661158322a1c617ec24f0148b6a22f5a79f4fa5efc7e7db018fcc24db0c73d"
+  },
+  "initial_report_verified_utc": "2026-11-18T14:38:39.965001+00:00",
+  "revision_date": "2026-11-19",
+  "publisher_reference": {
+    "key": "2025ICIAP",
+    "conference": "ICIAP 2025",
+    "publication_date": "2026-01-02",
+    "pages": "26--39",
+    "doi": "10.1007/978-3-032-10192-1_3",
+    "source_url": "https://link.springer.com/chapter/10.1007/978-3-032-10192-1_3"
+  },
+  "release_status_check": {
+    "date": "2026-11-19",
+    "tag": "models-v1.0.0",
+    "result": "release not found",
+    "public_download_verified": false,
+    "release_published_by_this_task": false,
+    "push_performed": false
+  },
+  "gradcam_review": {
+    "searched_directories": [
+      "artifacts",
+      "results",
+      "reports"
+    ],
+    "archived_ultrasound_examples_found": false,
+    "retained_evidence": "synthetic-input verification only"
   }
 }

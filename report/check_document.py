@@ -12,7 +12,18 @@ data = json.loads((HERE / 'evidence.json').read_text())
 abstract = source.split('% ABSTRACT_BEGIN')[1].split('% ABSTRACT_END')[0]
 words = len(abstract.split())
 assert 200 <= words <= 250, f'Abstract has {words} words'
-assert bib.startswith((ROOT / 'data/references.bib').read_text()), 'Provider BibTeX changed'
+provider = (ROOT / 'data/references.bib').read_text()
+# Preserve supplied metadata except the independently verified ICIAP version-of-record fields.
+expected_provider = (provider.replace('month={Sep}', 'month={January}', 1)
+                     .replace('year={2025}', 'year={2026}', 1)
+                     .replace('pages={1--12}', 'pages={26--39}', 1))
+expected_provider = expected_provider.replace(
+    '    pages={26--39},',
+    '    pages={26--39},\n'
+    '    doi={10.1007/978-3-032-10192-1_3},\n'
+    '    url={https://link.springer.com/chapter/10.1007/978-3-032-10192-1_3},\n'
+    '    note={ICIAP 2025 conference; version of record published 2 January 2026},', 1)
+assert bib.startswith(expected_provider), 'Unexpected change to mandatory dataset references'
 keys = set(re.findall(r'@\w+\{([^,]+),', bib))
 cited = {k for group in re.findall(r'\\cite[tp]?\{([^}]+)\}', source) for k in group.split(',')}
 assert cited <= keys, f'Unknown citations: {cited - keys}'
@@ -29,6 +40,12 @@ for model in data['models'].values():
         row = ' & '.join(f'{values[k]:.4f}' for k in
                          ['precision', 'recall_sensitivity', 'specificity', 'f1'])
         assert row in source, 'Manual validation operating-point table is stale'
+manifest = json.loads((ROOT / 'release/manifest.json').read_text())
+for model in manifest['models'].values():
+    assert model['checkpoint_asset'] in source, 'Release checkpoint filename missing'
+assert 'Python 3.12' in source
+assert 'Public checkpoint download is therefore not claimed.' in source
+assert 'An uncached PyTorch dependency download timed out' in source
 for literal in ['191204', 'David Ongaro Mauti Ethan']:
     assert literal in source
 pdf = HERE / 'capstone_report.pdf'
@@ -47,4 +64,5 @@ assert 'undefined' not in log.lower(), 'Unresolved LaTeX reference or citation'
 assert 'Rerun to get cross-references right' not in log
 assert 'Warning--' not in (HERE / 'capstone_report.blg').read_text()
 print(f'Document checks passed: {words}-word abstract, {len(cited)} citation keys, '
-      f'{len(labels)} unique labels; provider bibliography unchanged; compiled PDF verified.')
+      f'{len(labels)} unique labels; publisher metadata and release instructions verified; '
+      'compiled PDF verified.')

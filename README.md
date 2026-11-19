@@ -133,6 +133,11 @@ TesticulUS is credited to Morelli et al. and the dataset contributors.
   The provider's supplied entries are preserved in [references.bib](data/references.bib)
   with keys `2025ICIAP` and `2026BMVC`.
 
+The report bibliography uses the ICIAP paper's
+[final publisher record](https://link.springer.com/chapter/10.1007/978-3-032-10192-1_3):
+pages 26–39, published 2 January 2026 for the ICIAP 2025 conference. The original
+provider BibTeX and prepared release files remain unchanged.
+
 The licence permits noncommercial sharing and adaptation with attribution and
 ShareAlike. Original dataset images and adapted ultrasound visualizations are
 subject to CC BY-NC-SA 4.0. Dataset-based Grad-CAM visualizations, overlays and
@@ -496,6 +501,9 @@ remain ignored; do not commit medical images, prediction CSVs or credentials.
 ## Checkpoint installation from GitHub Releases
 
 Release tag **`models-v1.0.0`** is prepared locally and **has not been published**.
+The GitHub release query returned “release not found” on 19 November 2026.
+Submission changes remain local pending an authorized source push; supply the
+matching checkout directly to an examiner until those commits are available.
 Downloads become available only after redistribution review and explicit
 authorization to publish. Until then, these commands may report that the
 release is unavailable. See [release assets and publication commands](release/README.md),
@@ -531,6 +539,12 @@ Alternatively, add `--verify-load` to the download command when the ML runtime
 is already installed. Files are complete trained PyTorch checkpoints; restoring
 them does not fetch ImageNet initialization weights. Preserve both threshold
 JSON files, including their full validation records.
+
+For an examiner supplied with the local package before publication, use
+`artifacts/releases/models-v1.0.0/` in the verification command and set
+`CHECKPOINT_DIR=artifacts/releases/models-v1.0.0` for the inference examples
+below. No dataset download or partition evaluation is needed for a prediction
+on an explicitly supplied image.
 
 Run inference on an explicitly supplied research image, using the matching
 packaged configuration:
@@ -724,6 +738,26 @@ The service runs as UID/GID 10001, with one worker and a `/health` Docker
 health check. Mounted files must be readable by that UID. The default device
 is CPU; this image does not configure CUDA. Use the same health and prediction
 requests shown above.
+
+For the flat checkpoint names in the prepared release package, use this mount
+and environment mapping after building the image. A future release download
+can use `artifacts/checkpoints/models-v1.0.0` as `CHECKPOINT_DIR` instead:
+
+```bash
+CHECKPOINT_DIR=artifacts/releases/models-v1.0.0
+docker run --rm --read-only --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+  -p 127.0.0.1:8000:8000 \
+  --mount "type=bind,src=$PWD/$CHECKPOINT_DIR,dst=/models,readonly" \
+  -e CUSTOM_CNN_CHECKPOINT=/models/testiculus-custom-cnn-v1.pth \
+  -e RESNET18_CHECKPOINT=/models/testiculus-resnet18-v1.pth \
+  -e MOBILENET_V3_SMALL_CHECKPOINT=/models/testiculus-mobilenet-v3-small-v1.pth \
+  testiculus-inference:local
+```
+
+The saved three-model container check used a cached dependency build. An
+uncached PyTorch wheel download timed out; a clean-network build is not claimed
+verified. The new path mapping above is consistent with the packaged filenames
+and existing API environment variables; it was not a new container execution.
 
 Reproduce the container acceptance checks with the downloaded trained weights:
 

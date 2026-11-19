@@ -50,7 +50,8 @@ OMP_NUM_THREADS=1 .venv/bin/python -m unittest discover -s report -p 'test_*.py'
 The local-artifact unit check skips when separately supplied records are absent.
 The other three tests use tracked/synthetic numeric data. `check_document.py`
 checks the compiled PDF, citation/label integrity, abstract length, thresholds,
-manual validation table and retained provider bibliography entries.
+manual validation table, publisher-corrected ICIAP metadata, unchanged BMVC
+entry and release-package instructions.
 `--collect` is only for deliberately rebuilding the report's numeric snapshot
 from saved artifacts; it never writes back to experiments. No command here
 opens ultrasound pixels, executes a model, retrains or performs test inference.
@@ -60,14 +61,19 @@ opens ultrasound pixels, executes a model, retrains or performs test inference.
 The final PDF was compiled with pdfLaTeX/BibTeX and rendered with Poppler for
 visual page inspection. Four report-specific automated tests passed. The
 application's previously recorded full-suite result remains **150 passed**;
-that suite was not executed again during writing. Collection now identifies
-154 tests: the existing 150 plus these four report checks. No research result
-was changed. Source hashes were rechecked after drafting.
+that suite was not executed again during writing. The initial report phase
+collected 154 tests (150 plus these four); release tooling subsequently added
+18 separately verified tests. No research result was changed. Source hashes
+were rechecked after drafting and during submission finalization.
 
 The report explicitly records limitations rather than filling missing data.
 Before submission, the student should approve the argument, institutional
 submission details and scope, confirm examiner access to separately supplied
-checkpoints/artifacts, and resolve the 2025 publication-pagination discrepancy
-if desired. The supplied BibTeX says pages 1–12; the publisher lists 26–39. Both
-mandatory provider entries are preserved verbatim as requested. See the evidence
-audit for all remaining scientific and reproducibility gaps.
+checkpoints/artifacts. The ICIAP reference has been corrected to Springer's
+version of record: pages 26–39, DOI `10.1007/978-3-032-10192-1_3`, publication
+year 2026 for the ICIAP 2025 conference. Its key `2025ICIAP` and the mandatory
+BMVC citation are retained; original provider/release files remain unchanged.
+The release query on 19 November 2026 returned `release not found`, so the
+report describes planned distribution and local examiner access, without
+claiming public downloads. Redistribution review and authorized publication
+remain outstanding. See the evidence audit for remaining gaps.

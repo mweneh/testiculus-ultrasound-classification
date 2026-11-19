@@ -195,3 +195,20 @@ remains for owner review. No blanket checkpoint/software licence was invented.
 No GitHub Release, remote tag or push was created. Live release downloading
 cannot be verified until an authorized release exists; download success and
 failure handling were tested with mocked HTTPS responses.
+
+## Targeted submission revision (19 November 2026)
+
+AI assistance checked the assessment instructions and made limited report edits
+for the prepared GitHub checkpoint distribution, Python/checkpoint/Docker paths
+and examiner inference workflow. A read-only GitHub query returned `release not
+found` for `models-v1.0.0`; the report does not claim public download availability.
+Springer's final chapter record verified pages 26–39, DOI and publication on
+2 January 2026 for the ICIAP 2025 paper. The report bibliography was corrected;
+original provider and release citation files were preserved. No archived
+ultrasound Grad-CAM outputs were found, so the synthetic-only limitation remains.
+
+The assistant recompiled and inspected the revised PDF and ran report checks
+against saved numeric artifacts. It did not rewrite the scientific argument,
+change results, execute models, retrain, repeat held-out evaluation, publish a
+release or push commits. The student retains responsibility for final review
+and the independent scientific audit.
