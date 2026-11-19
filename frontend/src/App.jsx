@@ -161,7 +161,7 @@ export default function App({ validate = validateImageFile }) {
           </div>
 
           <div className="mt-6 grid gap-5 lg:grid-cols-12">
-            <div className="lg:col-span-7 xl:col-span-8">
+            <div className="min-w-0 lg:col-span-7 xl:col-span-8">
               <div className="lg:sticky lg:top-32">
                 <ImageViewer
                   image={image}
@@ -177,7 +177,7 @@ export default function App({ validate = validateImageFile }) {
                 />
               </div>
             </div>
-            <div className="space-y-5 lg:col-span-5 xl:col-span-4">
+            <div className="min-w-0 space-y-5 lg:col-span-5 xl:col-span-4">
               <ModelSelector
                 health={health}
                 selected={selectedModel}
