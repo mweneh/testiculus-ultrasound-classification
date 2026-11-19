@@ -23,10 +23,12 @@ export class ApiError extends Error {
 
 const STATUS_MESSAGES = {
   400: 'The server could not decode this image. Upload a valid PNG or JPEG file.',
+  408: 'The upload timed out. Check your connection and try again.',
   413: 'The image exceeds the server limits (5 MiB and 20 megapixels).',
   415: 'Only PNG and JPEG images are supported.',
   422: 'The request was incomplete. Select a model and an image, then try again.',
-  503: 'This model is not loaded on the server, so it cannot run.',
+  429: 'The shared research demo has reached its request limit. Wait one minute and retry.',
+  503: 'This model is not loaded on the server, or the shared research demo is busy. Retry shortly.',
 };
 
 async function readDetail(response) {

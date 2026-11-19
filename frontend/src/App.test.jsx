@@ -79,6 +79,7 @@ describe('TesticulUS interface', () => {
     await setup();
     expect(screen.getAllByText('Research and educational use only. Not for clinical diagnosis.').length).toBeGreaterThan(0);
     expect(screen.getByText(/3 of 3/)).toBeInTheDocument();
+    expect(screen.getByText(/Upload only anonymized images you are authorized to share/)).toBeInTheDocument();
   });
 
   it('previews a selected image without uploading it', async () => {
@@ -134,7 +135,7 @@ describe('TesticulUS interface', () => {
     await user.click(screen.getByRole('radio', { name: /Custom CNN/ }));
     vi.mocked(fetch).mockImplementationOnce(async () => json(503, { detail: 'Model custom_cnn is not configured' }));
     await user.click(runButton());
-    expect(await screen.findByText('This model is not loaded on the server, so it cannot run.')).toBeInTheDocument();
+    expect(await screen.findByText('This model is not loaded on the server, or the shared research demo is busy. Retry shortly.')).toBeInTheDocument();
     expect(screen.getByText(/Model custom_cnn is not configured/)).toBeInTheDocument();
     expect(screen.queryByTestId('predicted-class')).toBeNull();
     await waitFor(() => expect(calls.filter(({ url }) => url === '/health').length).toBeGreaterThan(1));

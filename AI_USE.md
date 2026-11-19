@@ -1,5 +1,13 @@
 # AI Use Disclosure
 
+AI assistance prepared an opt-in public-inference safety profile on a deployment
+branch: bounded request bodies and upload duration, global admission and rate
+limits, restricted multipart parsing, hidden interactive API documentation,
+sanitized model-execution errors and anonymized-upload instructions. The local
+API remains available with its existing contract. This step passed 37 API/safety
+tests and 34 frontend tests; the production frontend build passed. No checkpoint
+transfer, public deployment, model training or held-out inference was performed.
+
 AI assistance was used to inspect the repository and implement the data split
 and similarity-audit tooling, training and evaluation utilities, tests, and
 project documentation. It also integrated the user-provided Google Colab
