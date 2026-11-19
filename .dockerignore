@@ -1,4 +1,5 @@
-# Allow only source, serving requirements and frozen decision configuration.
+# Allow only source, serving requirements, frozen decision configuration and
+# the web interface sources plus the two frozen records it bundles.
 **
 !Dockerfile
 !requirements-api.txt
@@ -8,5 +9,21 @@
 !reports/
 !reports/validation_thresholds.json
 !reports/mobilenet_v3_small_thresholds.json
+!reports/mobilenet_exploratory_results.json
+!report/
+!report/evidence.json
+!frontend/
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/index.html
+!frontend/vite.config.js
+!frontend/tailwind.config.js
+!frontend/postcss.config.js
+!frontend/public/
+!frontend/public/**
+!frontend/src/
+!frontend/src/**
+frontend/src/**/*.test.*
+frontend/src/test/
 **/__pycache__/
 **/*.pyc
