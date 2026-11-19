@@ -7,12 +7,12 @@
     "testiculus-mobilenet-v3-small-v1.pth": "199afb1800167bb3c0242aa825ac78c5cbab9100c1a7d5cd2d78293a979bc43a",
     "validation_thresholds.json": "57c39b8495118a91946f54b9c888e1e08b0eaaa9f23ec35d76b668c6022b1349",
     "mobilenet_v3_small_thresholds.json": "162ec32cddb3b3c84c14c2c11cbe9692fe84800d3bd9e99c42c076bfd47a33dd",
-    "RELEASE_NOTES.md": "9b0dcbc28d33de16641d931b3d6959a044840793900166a948f3aa0dc263722c",
+    "RELEASE_NOTES.md": "f6ebb5b8c7383fba5601474688316af296e95639b35edc5d8c342844793dc724",
     "WEIGHT_NOTICES.md": "6935189e78917a1e2909ee339e2b1363bc1e54f9df5c1e7228e4e07030ae5a0e",
     "DATASET_REFERENCES.bib": "22d921861162304865f734c7e80473cba97119a622883d9147483a9275f77750",
     "TORCHVISION_LICENSE.txt": "2b63e4f6569e0e58260881a1f7ea8b1d9802859ab3cb4b32a45cba246245c8da"
   },
-  "manifest_sha256": "6390dca24954b7274e777499e0179f4bfb971ced5e215b48195d97d160a61373",
+  "manifest_sha256": "1970ebd8c81f608c74d39722d1084322509f0304e691df06dc24613be42b3923",
   "models": {
     "custom_cnn": {
       "loads": true,
@@ -63,5 +63,7 @@
     "command": "OMP_NUM_THREADS=1 python -m pytest -q tests/test_release_assets.py tests/test_repository_hygiene.py"
   },
   "prepared_file_count": 11,
-  "checksum_entries_verified": 10
+  "checksum_entries_verified": 10,
+  "verified_utc": "2026-11-19T05:44:38.957827+00:00",
+  "audit_follow_up": "F6: release notes cite the ICIAP version of record; only release-note and control-file bytes changed. All three checkpoint and both threshold hashes unchanged. Source tag must target the final reviewed main commit, not experiment_source_revision."
 }

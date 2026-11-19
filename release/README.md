@@ -104,16 +104,19 @@ separately authorized:
 ```bash
 OMP_NUM_THREADS=1 python -m src.release_assets verify \
   --package artifacts/releases/models-v1.0.0
-git push origin HEAD
+git push origin main:main
 ```
 
-Run from the reviewed checkout; `RELEASE_COMMIT` captures its full commit SHA.
-The commit must be available in the remote repository.
+Run from the clean, reviewed `main` checkout; `RELEASE_COMMIT` captures its full
+commit SHA after all submission-readiness changes. The commit must be available
+in the remote repository. The manifest's `experiment_source_revision` identifies
+the earlier frozen experiment implementation, not the release-tag target.
 `gh release create` creates a tag at that commit if it does not exist. Do not
 retarget an existing tag or use `--clobber` to replace assets.
 
 ```bash
-RELEASE_COMMIT=$(git rev-parse HEAD)
+RELEASE_COMMIT=$(git rev-parse main)
+test "$(git ls-remote origin refs/heads/main | cut -f1)" = "$RELEASE_COMMIT"
 ASSET_DIR=artifacts/releases/models-v1.0.0
 gh release create models-v1.0.0 \
   --repo mweneh/testiculus-ultrasound-classification \
@@ -141,6 +144,34 @@ gh release edit models-v1.0.0 \
   --repo mweneh/testiculus-ultrasound-classification --draft=false
 ```
 
+After publication, verify the tag resolves to `RELEASE_COMMIT`, inspect the
+release metadata and check public downloads against the trusted source manifest:
+
+```bash
+git fetch origin tag models-v1.0.0
+test "$(git rev-parse 'models-v1.0.0^{commit}')" = "$RELEASE_COMMIT"
+gh release view models-v1.0.0 \
+  --repo mweneh/testiculus-ultrasound-classification \
+  --json tagName,isDraft,publishedAt,url,assets
+python3 -m src.release_assets download --output artifacts/checkpoints/models-v1.0.0
+OMP_NUM_THREADS=1 python -m src.release_assets verify \
+  --package artifacts/checkpoints/models-v1.0.0
+```
+
+Use a new empty destination for the download check. The standard-library
+downloader uses public URLs without credentials. Only after these checks succeed,
+record the verified versioned URL and source revision in the README/report,
+remove obsolete pending-status text and rebuild the PDF. Review remote source
+paths for the report, API, Dockerfile, Grad-CAM, MobileNet, documentation and
+tests after the push; local existence alone does not verify remote delivery.
+
+If publication remains pending, the owner-confirmed alternative is Strathmore
+University Virtual Campus — DSA 8401, **Capstone Project (23 Nov)** assignment
+submission. Supply the matching source checkout and this complete 11-file
+package, then verify examiner access. **Upload and access verification are
+pending.** GitHub Releases remains preferred, with the repository URL submitted
+through Virtual Campus. This names a fallback channel, not a completed delivery.
+
 An immutable release setting, if available/enabled for the repository, can help
 prevent later asset replacement. Check the repository settings rather than
 assuming it is enabled. The command semantics above follow the official
@@ -153,7 +184,9 @@ Dataset: [TesticulUS](https://ditto.ing.unimore.it/testiculus/),
 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/), credited
 to Morelli et al. and the contributors. Cite both Morelli et al. ICIAP 2025
 (classification/synthetic pretraining) and BMVC 2026 (dataset/segmentation).
-Provider BibTeX entries are preserved in the package. Original dataset images
+Provider BibTeX entries are preserved in the package; release notes identify the
+ICIAP version of record (2026, pp. 26–39, DOI `10.1007/978-3-032-10192-1_3`).
+Original dataset images
 and adaptations, including modified ultrasound/Grad-CAM images, remain subject
 to attribution, change notices, noncommercial use and applicable ShareAlike.
 

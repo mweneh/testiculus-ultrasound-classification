@@ -85,12 +85,16 @@ Dataset: https://ditto.ing.unimore.it/testiculus/.
 Licence: CC BY-NC-SA 4.0,
 https://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-Cite both publications, with supplied entries in `DATASET_REFERENCES.bib`:
+Cite both publications. `DATASET_REFERENCES.bib` preserves the supplied entries;
+the ICIAP citation below uses the final publisher metadata rather than that
+entry's provisional year and pagination:
 
 1. Morelli, N., Marchesini, K., Lumetti, L., Santi, D., Grana, C., and Bolelli, F.
-   (2025). *Enhancing Testicular Ultrasound Image Classification Through Synthetic
+   (2026). *Enhancing Testicular Ultrasound Image Classification Through Synthetic
    Data and Pretraining Strategies*. Image Analysis and Processing – ICIAP 2025,
-   Springer.
+   Springer, pp. 26–39. https://doi.org/10.1007/978-3-032-10192-1_3.
+   Version of record published 2 January 2026 for the ICIAP 2025 conference:
+   https://link.springer.com/chapter/10.1007/978-3-032-10192-1_3.
 2. Morelli, N., Marchesini, K., Santi, D., Grana, C., and Bolelli, F. (2026).
    *A New Multicenter Testicular US Dataset and a Lightweight Cond-UNet for
    Generalization in US Segmentation*. Proceedings of the British Machine Vision

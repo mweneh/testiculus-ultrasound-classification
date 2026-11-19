@@ -53,8 +53,8 @@
     },
     "RELEASE_NOTES.md": {
       "source": "release/RELEASE_NOTES.md",
-      "sha256": "9b0dcbc28d33de16641d931b3d6959a044840793900166a948f3aa0dc263722c",
-      "size_bytes": 6433
+      "sha256": "f6ebb5b8c7383fba5601474688316af296e95639b35edc5d8c342844793dc724",
+      "size_bytes": 6757
     },
     "WEIGHT_NOTICES.md": {
       "source": "release/WEIGHT_NOTICES.md",
