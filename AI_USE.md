@@ -241,3 +241,26 @@ pages. These checks did not run model forward passes, retrain, open ultrasound
 pixels, repeat held-out inference or regenerate experimental records. The
 150-test application-suite result remains historical. The student remains
 responsible for scientific review, rights decisions and verified examiner access.
+
+## Web interface (19 November 2026)
+
+AI assistance designed and implemented the `frontend/` web interface (React,
+Vite, Tailwind CSS), a narrowly scoped `POST /explain` route reusing the
+existing Grad-CAM implementation, optional static serving of the compiled
+interface from the existing FastAPI application, a two-stage Dockerfile and a
+`compose.yaml` demonstration, with tests and README documentation. Existing
+`/health` and `/predict` behaviour and status codes were preserved and are
+covered by the unchanged tests.
+
+The comparison section reads the tracked frozen records at build time rather
+than retyping metrics; a test checks the displayed values against the report.
+The interface presents the model output as an uncalibrated score for the
+inhomogeneous class, not a probability of disease, keeps MobileNetV3-Small
+labelled post-hoc exploratory, and states Grad-CAM's limits. No checkpoint,
+threshold, split, training record or evaluation result was changed; no model
+was trained and no held-out test image was processed. Browser verification used
+one training-partition image. All 182 backend tests, the four report tests, 32
+frontend tests and the container acceptance check passed on 19 November 2026.
+The student remains responsible for reviewing the interface wording and
+deciding whether to merge or publish it.
+
