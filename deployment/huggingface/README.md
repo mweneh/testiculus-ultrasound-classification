@@ -174,6 +174,12 @@ read-only token. Revoke/rotate credentials through account settings when needed.
 
 No publishing command above has been run by the preparation scripts.
 
+The reviewed source bundle at `artifacts/huggingface-space` contains **62 files**
+from source revision `34700d2c1ee97493d95622bc3451c2002a5dbe04`. Its copied source
+bytes were checked against that revision, and a Docker build using the bundle
+itself passed (`testiculus-inference:huggingface-bundle`, dependency layers cached).
+This is a local build verification, not a Hub upload or live Space verification.
+
 ## Local Docker reproduction
 
 The prepared package includes all three checkpoints and both threshold files.

@@ -33,6 +33,14 @@ push, checkpoint transfer or hosted deployment was performed; the public
 deployment objective remains incomplete pending the stated approvals and live
 verification.
 
+After the deployment implementation commit, the assistant prepared a 62-file
+source-only Space bundle pinned to `34700d2c1ee97493d95622bc3451c2002a5dbe04`,
+verified copied bytes and exclusions, and built that exact bundle locally with
+cached dependency layers. The bundle was not uploaded. A final documentation
+pass clarified the historical synthetic checks versus the later training-image
+smoke check and the earlier failed dependency download versus the successful
+partial-cache deployment build.
+
 AI assistance was used to inspect the repository and implement the data split
 and similarity-audit tooling, training and evaluation utilities, tests, and
 project documentation. It also integrated the user-provided Google Colab

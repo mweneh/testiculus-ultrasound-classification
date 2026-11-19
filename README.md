@@ -97,8 +97,9 @@ flowchart TB
 
 MobileNetV3-Small is a post-hoc exploratory extension to the original
 Custom CNN/ResNet18 comparison. Grad-CAM is available through the CLI and the
-`/explain` endpoint; archived verification uses synthetic inputs and supports
-no anatomical interpretation. The Docker service loads each configured model
+`/explain` endpoint. Earlier pipeline checks used synthetic inputs; the later
+local Space-profile checks also used one verified training image. Neither
+supports anatomical interpretation. The Docker service loads each configured model
 once per process, with weights supplied separately from the source/image.
 
 ## Web interface
@@ -935,7 +936,7 @@ equivalent and allow serving a subset of models.
 
 The Dockerfile has two stages. A pinned `node:24-alpine` stage runs `npm ci`
 and compiles the interface; only its static `dist/` files are copied into the
-unchanged Python serving stage, so Node.js and `node_modules` are not in the
+Python serving stage, so Node.js and `node_modules` are not in the
 final image.
 
 Build the CPU inference image:
@@ -945,6 +946,7 @@ docker build -t testiculus-inference:local .
 ```
 
 The build context allows only source code, serving requirements, Dockerfile,
+the trusted `release/manifest.json`,
 the two model-specific frozen threshold records, the interface sources and
 the two frozen records the interface bundles
 (`reports/mobilenet_exploratory_results.json`, `report/evidence.json`).
@@ -982,10 +984,11 @@ docker run --rm --read-only --tmpfs /tmp:rw,noexec,nosuid,size=64m \
   testiculus-inference:local
 ```
 
-The saved three-model container check used a cached dependency build. An
-uncached PyTorch wheel download timed out; a clean-network build is not claimed
-verified. The new path mapping above is consistent with the packaged filenames
-and existing API environment variables; it was not a new container execution.
+The earlier saved three-model check used cached dependencies after a PyTorch
+download timed out. Deployment preparation subsequently built the Python stage
+with freshly downloaded dependencies and verified the flat package mapping in
+local containers. Base images and frontend dependencies were cached; a fully
+uncached build and a live Hugging Face build remain unverified.
 
 Reproduce the container acceptance checks with the downloaded trained weights:
 
@@ -1134,6 +1137,15 @@ Grad-CAM checks for all three trained models using synthetic pixels only; a
 ResNet18-only container also passed, with other models rejected as unavailable.
 The review did not run an optimizer or held-out inference. See
 [integration verification](report/frontend_integration_verification.json).
+
+The subsequent deployment-preparation suite passed **201 backend tests**, with
+both synthetic optimizer tests excluded, plus **34 frontend tests** and the
+**four report checks**. The local Space profile passed genuine three-model
+prediction/Grad-CAM checks, desktop/mobile browser checks and upload/rate-limit
+checks. All checkpoints, frozen scientific records and the report PDF remain
+unchanged. These local checks do not establish public hosting; see the
+[deployment record](deployment/huggingface/verification.json) for measurements,
+source hashes, cache scope and pending live checks.
 
 Release preparation adds **18 passing tests** in `tests/test_release_assets.py`,
 including strict loading of the available final checkpoints, deterministic

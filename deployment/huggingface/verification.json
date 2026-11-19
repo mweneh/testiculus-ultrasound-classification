@@ -187,5 +187,15 @@
     "Short local memory observation is not a soak test or a hosted capacity guarantee.",
     "Space account, names, hosting rights, plan/spending approval and public deployment remain pending.",
     "No paid hardware or storage provisioned; no source or model transfer performed."
-  ]
+  ],
+  "space_source_bundle": {
+    "path": "artifacts/huggingface-space",
+    "source_revision": "34700d2c1ee97493d95622bc3451c2002a5dbe04",
+    "files": 62,
+    "copied_bytes_match_source": true,
+    "excludes_weights_data_credentials": true,
+    "docker_build": "passed; dependency layers cached",
+    "image_tag": "testiculus-inference:huggingface-bundle",
+    "published": false
+  }
 }
