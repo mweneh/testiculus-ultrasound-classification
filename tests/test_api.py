@@ -1,12 +1,15 @@
+import base64
 from io import BytesIO
 import math
 
 from fastapi.testclient import TestClient
+import numpy as np
 from PIL import Image
 import pytest
 import torch
 
 from src import api
+from src.gradcam import compute_gradcam, get_target_layer
 from src.inference import CheckpointPredictor
 from src.models.architectures import CustomCNN, build_resnet18
 from src.threshold_config import load_selected_threshold
@@ -128,3 +131,86 @@ def test_startup_fails_without_valid_model_and_configuration(checkpoints, tmp_pa
     with pytest.raises((FileNotFoundError, ValueError, RuntimeError)):
         with TestClient(api.create_app(paths, device="cpu", **kwargs)):
             pass
+
+
+@pytest.fixture(scope="module")
+def random_cnn_checkpoint(tmp_path_factory):
+    """Untrained weights giving a nonconstant attribution map (seed probed once)."""
+    torch.manual_seed(0)
+    model = CustomCNN()
+    path = tmp_path_factory.mktemp("random-api-checkpoint") / "custom_cnn.pth"
+    torch.save({
+        "model_type": "custom_cnn", "architecture": "CustomCNN",
+        "class_to_idx": CLASS_TO_LABEL, "model_state_dict": model.state_dict(),
+    }, path)
+    return path
+
+
+def textured_png():
+    pixels = (np.arange(48 * 64, dtype=np.uint8).reshape(48, 64) * 7) % 251
+    stream = BytesIO()
+    Image.fromarray(pixels, mode="L").save(stream, format="PNG")
+    return stream.getvalue()
+
+
+def decode_heatmap(result):
+    data = base64.b64decode(result["gradcam"]["heatmap_png_base64"], validate=True)
+    with Image.open(BytesIO(data)) as image:
+        assert image.format == "PNG" and image.mode == "L"
+        return np.asarray(image, dtype=np.float32) / 255
+
+
+@pytest.mark.parametrize("model_type", ["custom_cnn", "resnet18"])
+def test_explain_matches_prediction_and_returns_input_resolution_map(client, model_type):
+    data = textured_png()
+    predicted = client.post(f"/predict?model_type={model_type}", files={"file": ("x.png", data)})
+    explained = client.post(f"/explain?model_type={model_type}", files={"file": ("x.png", data)})
+    assert predicted.status_code == explained.status_code == 200
+    result = explained.json()
+    for key, value in predicted.json().items():
+        assert result[key] == value
+    details = result["gradcam"]
+    assert details["target_class"] == result["prediction"]
+    assert details["target_layer"] == ("features.12" if model_type == "custom_cnn" else "layer4.1")
+    assert details["score"] == "pre-softmax class logit"
+    assert details["heatmap_shape"] == [224, 224]
+    heatmap = decode_heatmap(result)
+    assert heatmap.shape == (224, 224) and np.isfinite(heatmap).all()
+    # Zeroed classifier weights make logits feature-independent: the API must
+    # report that constant map honestly rather than invent structure.
+    assert details["constant_map"] and not heatmap.any()
+
+
+def test_explain_heatmap_equals_direct_gradcam_and_leaves_predictions_unchanged(random_cnn_checkpoint):
+    data = textured_png()
+    with TestClient(api.create_app({"custom_cnn": random_cnn_checkpoint}, device="cpu")) as client:
+        before = client.post("/predict?model_type=custom_cnn", files={"file": ("x.png", data)}).json()
+        result = client.post("/explain?model_type=custom_cnn", files={"file": ("x.png", data)}).json()
+        after = client.post("/predict?model_type=custom_cnn", files={"file": ("x.png", data)}).json()
+    assert before == after
+    assert result["probability_class_1"] == before["probability_class_1"]
+    predictor = CheckpointPredictor(random_cnn_checkpoint, device="cpu")
+    with Image.open(BytesIO(data)) as image:
+        inputs = predictor.transform(image.convert("L")).unsqueeze(0)
+    _, layer = get_target_layer(predictor.model, "custom_cnn")
+    expected = compute_gradcam(predictor.model, inputs, layer, result["prediction"])
+    heatmap = decode_heatmap(result)
+    assert not result["gradcam"]["constant_map"] and np.ptp(heatmap) > 0
+    np.testing.assert_allclose(heatmap, np.rint(expected * 255) / 255, atol=1e-6)
+
+
+@pytest.mark.parametrize("data,status", [(b"", 400), (b"not an image", 400), (image_bytes(format="GIF"), 415)])
+def test_explain_shares_upload_validation(client, data, status):
+    response = client.post("/explain?model_type=custom_cnn", files={"file": ("input.png", data)})
+    assert response.status_code == status
+
+
+def test_explain_limits_and_unconfigured_model(client, checkpoints, monkeypatch):
+    monkeypatch.setattr(api, "MAX_UPLOAD_BYTES", 10)
+    assert client.post("/explain?model_type=custom_cnn", files={"file": ("x", b"x" * 11)}).status_code == 413
+    monkeypatch.undo()
+    assert client.post("/explain?model_type=unknown", files={"file": ("x", image_bytes())}).status_code == 422
+    with TestClient(api.create_app({"resnet18": checkpoints["resnet18"]}, device="cpu")) as single:
+        response = single.post("/explain?model_type=custom_cnn", files={"file": ("x", image_bytes())})
+        assert response.status_code == 503
+        assert response.json()["detail"] == "Model custom_cnn is not configured"
