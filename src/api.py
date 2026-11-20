@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 import numpy as np
 from PIL import Image, UnidentifiedImageError
@@ -17,6 +18,7 @@ from pydantic import BaseModel, Field
 
 from src.gradcam import compute_gradcam, get_target_layer
 from src.inference import CheckpointPredictor
+from src.public_api import PublicAPILimits
 from src.threshold_config import MODEL_NAMES
 
 
@@ -24,6 +26,22 @@ DEFAULT_FRONTEND_DIST = Path(__file__).resolve().parents[1] / "frontend" / "dist
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 MAX_IMAGE_PIXELS = 20_000_000
 ModelType = Literal["custom_cnn", "resnet18", "mobilenet_v3_small"]
+
+
+class PublicUploadRoute(APIRoute):
+    """Parse one file, with no extra fields, before FastAPI's cached form use."""
+
+    def get_route_handler(self):
+        handler = super().get_route_handler()
+
+        async def limited(request):
+            if request.method == "POST" and request.url.path in {"/predict", "/explain"}:
+                async with request.form(max_files=1, max_fields=0,
+                                        max_part_size=MAX_UPLOAD_BYTES):
+                    return await handler(request)
+            return await handler(request)
+
+        return limited
 
 
 class PredictionResponse(BaseModel):
@@ -115,9 +133,20 @@ class FrontendFiles(StaticFiles):
         "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
     }
 
+    def __init__(self, *args, public_mode=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.security_headers = dict(self.SECURITY_HEADERS)
+        if public_mode:
+            # A Space's canonical page embeds its *.hf.space app in an iframe.
+            self.security_headers["Content-Security-Policy"] = (
+                self.security_headers["Content-Security-Policy"].replace(
+                    "frame-ancestors 'none'", "frame-ancestors 'self' https://huggingface.co"
+                )
+            )
+
     async def get_response(self, path, scope):
         response = await super().get_response(path, scope)
-        response.headers.update(self.SECURITY_HEADERS)
+        response.headers.update(self.security_headers)
         response.headers["Cache-Control"] = (
             "public, max-age=31536000, immutable" if path.startswith("assets/") else "no-cache"
         )
@@ -142,13 +171,15 @@ def resolve_frontend_dir(frontend_dir: Path | None = None) -> Path | None:
 def create_app(checkpoint_paths: dict[str, Path] | None = None, *,
                threshold_config: Path | None = None,
                device: str | None = None,
-               frontend_dir: Path | None = None) -> FastAPI:
+               frontend_dir: Path | None = None,
+               public_mode: bool | None = None) -> FastAPI:
     """Load configured models once at startup; never substitute random weights.
 
     When a compiled web interface is available it is mounted at ``/`` after
     every API route, so /health, /predict, /explain and /docs keep priority.
     """
     static_dir = resolve_frontend_dir(frontend_dir)
+    public_mode = (os.environ.get("PUBLIC_MODE") == "1") if public_mode is None else public_mode
 
     @asynccontextmanager
     async def lifespan(application: FastAPI):
@@ -168,7 +199,11 @@ def create_app(checkpoint_paths: dict[str, Path] | None = None, *,
         target_device = device if device is not None else os.environ.get("DEVICE", "cpu")
         predictors = {}
         for name, path in paths.items():
-            predictor = CheckpointPredictor(path, threshold_config=config, device=target_device)
+            per_model_config = os.environ.get(f"{name.upper()}_THRESHOLD_CONFIG")
+            predictor = CheckpointPredictor(
+                path, threshold_config=Path(per_model_config) if per_model_config else config,
+                device=target_device,
+            )
             if predictor.model_type != name:
                 raise ValueError(f"Checkpoint configured as {name} contains {predictor.model_type}")
             predictors[name] = predictor
@@ -182,7 +217,13 @@ def create_app(checkpoint_paths: dict[str, Path] | None = None, *,
         title="TesticulUS research inference", version="1.0.0",
         description="Frozen image-level research classifiers. Not clinically validated or suitable for diagnosis.",
         lifespan=lifespan,
+        docs_url=None if public_mode else "/docs",
+        redoc_url=None if public_mode else "/redoc",
+        openapi_url=None if public_mode else "/openapi.json",
     )
+    if public_mode:
+        application.add_middleware(PublicAPILimits)
+        application.router.route_class = PublicUploadRoute
 
     @application.get("/health")
     def health() -> dict:
@@ -202,7 +243,12 @@ def create_app(checkpoint_paths: dict[str, Path] | None = None, *,
     def predict(model_type: ModelType, file: UploadFile = File(...)) -> dict:
         predictor = configured_predictor(model_type)
         with _read_upload(file) as decoded:
-            return predictor.predict(decoded)
+            try:
+                return predictor.predict(decoded)
+            except Exception:
+                if public_mode:
+                    raise HTTPException(500, "Prediction failed; retry or contact the maintainer") from None
+                raise
 
     @application.post("/explain", response_model=ExplanationResponse)
     def explain(model_type: ModelType, file: UploadFile = File(...)) -> dict:
@@ -213,10 +259,16 @@ def create_app(checkpoint_paths: dict[str, Path] | None = None, *,
         """
         predictor = configured_predictor(model_type)
         with _read_upload(file) as decoded:
-            return explain_prediction(predictor, decoded)
+            try:
+                return explain_prediction(predictor, decoded)
+            except Exception:
+                if public_mode:
+                    raise HTTPException(500, "Explanation failed; retry or contact the maintainer") from None
+                raise
 
     if static_dir is not None:
-        application.mount("/", FrontendFiles(directory=static_dir, html=True), name="frontend")
+        application.mount("/", FrontendFiles(directory=static_dir, html=True,
+                                             public_mode=public_mode), name="frontend")
 
     return application
 

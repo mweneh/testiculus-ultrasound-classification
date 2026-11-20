@@ -4,9 +4,16 @@ import { MODEL_IDS } from '../lib/api.js';
 import { comparison, METRICS, METRIC_LABELS, observedStrengths } from '../lib/records.js';
 import { MODELS } from '../lib/models.js';
 import { compactCount, fixed, grouped, milliseconds } from '../lib/format.js';
-import { ExploratoryBadge, Note, OriginalBadge, SectionHeading, SeriesSwatch } from './ui.jsx';
+import { ExploratoryBadge, Note, Reveal, SectionHeading, SeriesSwatch } from './ui.jsx';
+import { useReveal } from '../hooks/useReveal.js';
 
 const BAR_FILL = { 1: 'bg-series-1', 2: 'bg-series-2', 3: 'bg-series-3' };
+
+/** Bars grow from the axis once the chart is on screen, one model after another. */
+function growth(revealed, panelIndex, rowIndex) {
+  if (!revealed) return { className: 'scale-x-0', style: undefined };
+  return { className: 'animate-grow-x', style: { animationDelay: `${panelIndex * 70 + rowIndex * 110}ms` } };
+}
 
 function Legend() {
   return (
@@ -19,7 +26,7 @@ function Legend() {
         </li>
       ))}
       <li className="text-[12px] text-ink-3">
-        <span className="text-caution">*</span> post-hoc exploratory
+        <span className="text-caution">*</span> exploratory
       </li>
     </ul>
   );
@@ -38,7 +45,7 @@ function Tooltip({ value, label, detail }) {
   );
 }
 
-function MetricPanel({ metric }) {
+function MetricPanel({ metric, index, revealed }) {
   const reference = metric.reference;
   return (
     <figure className="panel p-4" aria-labelledby={`metric-${metric.key}`}>
@@ -56,10 +63,11 @@ function MetricPanel({ metric }) {
             style={{ left: `calc(8rem + (100% - 8rem - 3.25rem) * ${reference.value})` }}
           />
         )}
-        {MODELS.map((model) => {
+        {MODELS.map((model, row) => {
           const record = comparison.models[model.id];
           const value = record.metrics[metric.key];
           const detail = metric.detail?.(record.confusion);
+          const grow = growth(revealed, index, row);
           return (
             <div
               key={model.id}
@@ -70,8 +78,8 @@ function MetricPanel({ metric }) {
               <span className="w-[7.5rem] shrink-0 truncate text-[12px] text-ink-2">{model.name}</span>
               <span className="relative h-3.5 flex-1">
                 <span
-                  className={`absolute inset-y-0 left-0 rounded-r-[4px] ${BAR_FILL[model.series]} transition-[filter] group-hover:brightness-125 group-focus-visible:brightness-125`}
-                  style={{ width: `${value * 100}%` }}
+                  className={`absolute inset-y-0 left-0 origin-left rounded-r-[4px] ${BAR_FILL[model.series]} ${grow.className} transition-[filter] group-hover:brightness-125 group-focus-visible:brightness-125`}
+                  style={{ width: `${value * 100}%`, ...grow.style }}
                 />
                 <Tooltip value={fixed(value, 4)} label={model.name} detail={detail} />
               </span>
@@ -89,7 +97,7 @@ function MetricPanel({ metric }) {
   );
 }
 
-function LatencyPanel() {
+function LatencyPanel({ index, revealed }) {
   const { benchmark } = comparison;
   const maxP95 = Math.max(...MODEL_IDS.map((id) => comparison.models[id].latency.p95));
   const axisMax = Math.ceil(maxP95 / 25) * 25;
@@ -103,8 +111,10 @@ function LatencyPanel() {
         <p className="text-[12px] text-ink-3">Lower is faster</p>
       </figcaption>
       <div className="mt-4 space-y-3">
-        {MODELS.map((model) => {
+        {MODELS.map((model, row) => {
           const { latency, checkpointMiB, parameters } = comparison.models[model.id];
+          const grow = growth(revealed, index, row);
+          const whisker = revealed ? 'animate-fade-in [animation-delay:900ms]' : 'opacity-0';
           return (
             <div
               key={model.id}
@@ -115,15 +125,15 @@ function LatencyPanel() {
               <span className="w-[8rem] shrink-0 truncate text-[12px] text-ink-2">{model.name}</span>
               <span className="relative h-3.5 flex-1">
                 <span
-                  className={`absolute inset-y-0 left-0 rounded-r-[4px] ${BAR_FILL[model.series]} group-hover:brightness-125 group-focus-visible:brightness-125`}
-                  style={{ width: `${(latency.median / axisMax) * 100}%` }}
+                  className={`absolute inset-y-0 left-0 origin-left rounded-r-[4px] ${BAR_FILL[model.series]} ${grow.className} group-hover:brightness-125 group-focus-visible:brightness-125`}
+                  style={{ width: `${(latency.median / axisMax) * 100}%`, ...grow.style }}
                 />
                 <span
                   aria-hidden="true"
-                  className="absolute top-1/2 h-px -translate-y-1/2 bg-ink-2"
+                  className={`absolute top-1/2 h-px -translate-y-1/2 bg-ink-2 ${whisker}`}
                   style={{ left: `${(latency.median / axisMax) * 100}%`, width: `${((latency.p95 - latency.median) / axisMax) * 100}%` }}
                 />
-                <span aria-hidden="true" className="absolute -top-0.5 -bottom-0.5 w-px bg-ink-2" style={{ left: `${(latency.p95 / axisMax) * 100}%` }} />
+                <span aria-hidden="true" className={`absolute -top-0.5 -bottom-0.5 w-px bg-ink-2 ${whisker}`} style={{ left: `${(latency.p95 / axisMax) * 100}%` }} />
                 <Tooltip
                   value={`${milliseconds(latency.median)} median`}
                   label={model.name}
@@ -155,16 +165,16 @@ function SummaryCards() {
   const strengths = observedStrengths();
   return (
     <div className="grid gap-4 md:grid-cols-3">
-      {MODELS.map((model) => {
+      {MODELS.map((model, index) => {
         const record = comparison.models[model.id];
         return (
-          <article key={model.id} className="panel flex flex-col p-4">
+          <Reveal as="article" key={model.id} delay={index * 90} className="panel flex flex-col p-4">
             <div className="flex items-center justify-between gap-2">
               <h3 className="flex items-center gap-2 text-[15px] font-semibold text-ink-1">
                 <SeriesSwatch series={model.series} />
                 {model.name}
               </h3>
-              {model.exploratory ? <ExploratoryBadge /> : <OriginalBadge />}
+              {model.exploratory && <ExploratoryBadge />}
             </div>
             <p className="mt-2 text-[12.5px] leading-snug text-ink-2">{model.summary}</p>
             <dl className="mt-4 grid grid-cols-3 gap-2 border-y border-lab-line py-3 text-center">
@@ -198,9 +208,21 @@ function SummaryCards() {
             <p className="mt-auto pt-3 text-[11.5px] text-ink-3">
               {record.confusion.fp} false positives · {record.confusion.fn} missed inhomogeneous images
             </p>
-          </article>
+          </Reveal>
         );
       })}
+    </div>
+  );
+}
+
+function ChartGrid() {
+  const [ref, revealed] = useReveal({ threshold: 0.1 });
+  return (
+    <div ref={ref} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {METRICS.map((metric, index) => (
+        <MetricPanel key={metric.key} metric={metric} index={index} revealed={revealed} />
+      ))}
+      <LatencyPanel index={METRICS.length} revealed={revealed} />
     </div>
   );
 }
@@ -274,11 +296,9 @@ export default function ComparisonSection() {
         <span className="chip">One sensitivity step = 1 of {test.positive} images</span>
       </div>
 
-      <Note tone="warning" className="mt-5 max-w-4xl">
-        MobileNetV3-Small was added after the original Custom CNN and ResNet18 test results had been observed. Its checkpoint and
-        threshold were frozen before its single test evaluation, but the comparison including it is{' '}
-        <strong className="font-semibold text-ink-1">exploratory, not confirmatory</strong>. No model is shown to be clinically
-        superior; the trade-offs depend on an unmeasured clinical cost of missed versus false findings.
+      <Note className="mt-5 max-w-4xl">
+        No model is shown to be clinically superior; the trade-offs depend on an unmeasured clinical cost of missed versus false
+        findings.
       </Note>
 
       <div className="mt-8">
@@ -310,12 +330,7 @@ export default function ComparisonSection() {
 
       <div className="mt-4">
         {view === 'charts' ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {METRICS.map((metric) => (
-              <MetricPanel key={metric.key} metric={metric} />
-            ))}
-            <LatencyPanel />
-          </div>
+          <ChartGrid />
         ) : (
           <ComparisonTable />
         )}

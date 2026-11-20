@@ -53,11 +53,21 @@ export default {
           '0%': { transform: 'translateY(-100%)' },
           '100%': { transform: 'translateY(100%)' },
         },
+        'grow-x': {
+          from: { transform: 'scaleX(0)' },
+          to: { transform: 'scaleX(1)' },
+        },
+        'fade-in': {
+          from: { opacity: '0' },
+          to: { opacity: '1' },
+        },
       },
       animation: {
         'fade-up': 'fade-up 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both',
         shimmer: 'shimmer 1.6s linear infinite',
         scan: 'scan 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+        'grow-x': 'grow-x 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both',
+        'fade-in': 'fade-in 500ms ease-out both',
       },
     },
   },

@@ -1,25 +1,18 @@
 import { Info, TriangleAlert } from 'lucide-react';
+import { useReveal } from '../hooks/useReveal.js';
 
 export function SeriesSwatch({ series, className = '' }) {
   const colors = { 1: 'bg-series-1', 2: 'bg-series-2', 3: 'bg-series-3' };
   return <span aria-hidden="true" className={`inline-block h-2.5 w-2.5 shrink-0 rounded-[3px] ${colors[series]} ${className}`} />;
 }
 
-export function ExploratoryBadge({ compact = false }) {
+export function ExploratoryBadge() {
   return (
     <span
       className="inline-flex items-center gap-1 rounded-full border border-caution/30 bg-caution/10 px-2 py-0.5 text-[11px] font-semibold text-caution"
-      title="Added after the original models' test results were known; exploratory, not confirmatory."
+      title="Exploratory, not confirmatory."
     >
-      {compact ? 'Exploratory' : 'Post-hoc exploratory'}
-    </span>
-  );
-}
-
-export function OriginalBadge() {
-  return (
-    <span className="inline-flex items-center rounded-full border border-lab-line bg-lab-raised px-2 py-0.5 text-[11px] font-semibold text-ink-2">
-      Original comparison
+      Exploratory
     </span>
   );
 }
@@ -67,5 +60,22 @@ export function SectionHeading({ id, eyebrow, title, children }) {
       </h2>
       {children && <div className="mt-3 text-[15px] leading-relaxed text-ink-2">{children}</div>}
     </div>
+  );
+}
+
+/** Fades its content up once it scrolls into view. */
+export function Reveal({ as: Tag = 'div', delay = 0, className = '', children, ...rest }) {
+  const [ref, revealed] = useReveal();
+  return (
+    <Tag
+      ref={ref}
+      className={`transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.2,0.7,0.2,1)] ${
+        revealed ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'
+      } ${className}`}
+      style={revealed && delay ? { transitionDelay: `${delay}ms` } : undefined}
+      {...rest}
+    >
+      {children}
+    </Tag>
   );
 }

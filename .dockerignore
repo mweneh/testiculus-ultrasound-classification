@@ -12,6 +12,8 @@
 !reports/mobilenet_exploratory_results.json
 !report/
 !report/evidence.json
+!release/
+!release/manifest.json
 !frontend/
 !frontend/package.json
 !frontend/package-lock.json

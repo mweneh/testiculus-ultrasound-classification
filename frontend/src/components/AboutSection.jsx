@@ -1,7 +1,7 @@
-import { BookOpen, Database, ExternalLink, FileText, ShieldAlert, Split } from 'lucide-react';
+import { BookOpen, Database, ExternalLink, FileText, HeartPulse, ScanSearch, ShieldAlert, Split, Video, Waves } from 'lucide-react';
 import { comparison } from '../lib/records.js';
 import { grouped } from '../lib/format.js';
-import { SectionHeading } from './ui.jsx';
+import { Reveal, SectionHeading } from './ui.jsx';
 
 export const REPOSITORY_URL = 'https://github.com/mweneh/testiculus-ultrasound-classification';
 export const REPORT_URL = `${REPOSITORY_URL}/blob/main/report/capstone_report.pdf`;
@@ -33,15 +33,69 @@ function ClassBar({ negative, positive, label }) {
   );
 }
 
-function Card({ icon: Icon, title, children, className = '' }) {
+/** Deterministic pseudo-random jitter in [0, 1) so the schematic renders identically every time. */
+function jitter(index) {
+  const value = Math.sin(index * 12.9898) * 43758.5453;
+  return value - Math.floor(value);
+}
+
+const BLOBS = [
+  { x: 4, y: 5, r: 3.2, delta: -0.24 },
+  { x: 11, y: 4, r: 2.6, delta: 0.3 },
+  { x: 9, y: 11, r: 3.6, delta: -0.2 },
+  { x: 3, y: 12, r: 2.2, delta: 0.26 },
+];
+
+/** Abstract schematic of an even versus a patchy texture; not an ultrasound image. */
+function TextureSwatch({ patchy, label }) {
+  const size = 14;
+  const cells = Array.from({ length: size * size }, (_, index) => {
+    const x = index % size;
+    const y = Math.floor(index / size);
+    let level = 0.42 + (jitter(index) - 0.5) * 0.12;
+    if (patchy) {
+      for (const blob of BLOBS) {
+        const distance = Math.hypot(x - blob.x, y - blob.y);
+        level += blob.delta * Math.exp(-(distance * distance) / (2 * blob.r * blob.r)) * 1.6;
+      }
+      level += (jitter(index + 999) - 0.5) * 0.18;
+    }
+    return { x, y, level: Math.min(0.95, Math.max(0.04, level)) };
+  });
   return (
-    <article className={`panel p-5 ${className}`}>
+    <figure className="flex flex-col items-center gap-1.5">
+      <svg viewBox={`0 0 ${size} ${size}`} className="h-16 w-16 rounded-lg ring-1 ring-lab-line" aria-hidden="true">
+        <rect width={size} height={size} fill="#04080f" />
+        {cells.map((cell) => (
+          <rect key={`${cell.x}-${cell.y}`} x={cell.x} y={cell.y} width="1" height="1" fill="#e8eef6" fillOpacity={cell.level} />
+        ))}
+      </svg>
+      <figcaption className="text-[11.5px] text-ink-2">{label}</figcaption>
+    </figure>
+  );
+}
+
+function LabelPoint({ icon: Icon, title, children }) {
+  return (
+    <div>
+      <h4 className="flex items-center gap-2 text-[13.5px] font-semibold text-ink-1">
+        <Icon aria-hidden="true" className="h-3.5 w-3.5 text-accent" />
+        {title}
+      </h4>
+      <div className="mt-2 space-y-2">{children}</div>
+    </div>
+  );
+}
+
+function Card({ icon: Icon, title, children, className = '', delay = 0 }) {
+  return (
+    <Reveal as="article" delay={delay} className={`panel p-5 ${className}`}>
       <h3 className="flex items-center gap-2 text-[15px] font-semibold text-ink-1">
         <Icon aria-hidden="true" className="h-4 w-4 text-accent" />
         {title}
       </h3>
       <div className="mt-3 text-[13.5px] leading-relaxed text-ink-2">{children}</div>
-    </article>
+    </Reveal>
   );
 }
 
@@ -61,13 +115,54 @@ export default function AboutSection() {
     <section id="about" aria-labelledby="about-title" className="scroll-mt-28">
       <SectionHeading id="about-title" eyebrow="About the research" title="What this prototype is, and what it is not">
         <p>
-          An MSc Applied Machine Learning capstone (DSA 8401, Strathmore University) comparing image-level classifiers for
-          testicular ultrasound appearance. The target is the released homogeneous / inhomogeneous image label, not a patient
+          A comparison of image-level classifiers for testicular ultrasound appearance. The target is the released homogeneous / inhomogeneous image label, not a patient
           diagnosis, infertility or malignancy.
         </p>
       </SectionHeading>
 
       <div className="mt-8 grid gap-4 lg:grid-cols-3">
+        <Card icon={ScanSearch} title="What the labels mean" className="lg:col-span-3">
+          <div className="grid gap-6 md:grid-cols-3">
+            <LabelPoint icon={Waves} title="Tissue texture">
+              <p>
+                <strong className="font-semibold text-ink-1">Homogeneous</strong>: an even, uniform echotexture, with fine echoes
+                spread consistently across the testicular tissue.{' '}
+                <strong className="font-semibold text-ink-1">Inhomogeneous</strong>: an uneven texture, with patchy or mottled
+                regions darker or brighter than their surroundings.
+              </p>
+              <div className="flex gap-5 pt-1">
+                <TextureSwatch label="Even" />
+                <TextureSwatch patchy label="Patchy" />
+              </div>
+              <p className="text-[12px] text-ink-3">
+                Schematic only, not ultrasound images. The dataset authors publish no visual criteria; the labels are
+                clinicians&apos; judgements.
+              </p>
+            </LabelPoint>
+            <LabelPoint icon={HeartPulse} title="Why it matters">
+              <p>
+                The dataset authors describe parenchymal inhomogeneity as &ldquo;an emerging biomarker for male
+                infertility&rdquo; (Morelli et al., ICIAP 2025), citing Spaggiari et al., <em>Asian Journal of Andrology</em>,
+                2020.
+              </p>
+              <p>
+                It is a finding that informs a fertility assessment, not a diagnosis of infertility or any other condition.
+                This tool predicts the appearance label only.
+              </p>
+            </LabelPoint>
+            <LabelPoint icon={Video} title="Judged on video, saved as stills">
+              <p>
+                Clinicians assess homogeneity during a live video examination, but only still screenshots are kept, and a
+                single frame may not show what they saw.
+              </p>
+              <p>
+                When the authors had clinicians re-review 72 suspicious images from the stills alone, the new assessments did
+                not agree with the original labels. Some labels are noisy, so some apparent model errors may be label errors.
+              </p>
+            </LabelPoint>
+          </div>
+        </Card>
+
         <Card icon={Database} title="Dataset: TesticulUS-Real">
           <p>
             {grouped(dataset.total)} labelled grayscale images: {grouped(dataset.negative)} homogeneous (class 0) and{' '}
@@ -79,7 +174,7 @@ export default function AboutSection() {
           </div>
         </Card>
 
-        <Card icon={Split} title="Image-level split">
+        <Card icon={Split} title="Image-level split" delay={90}>
           <p>Fixed seed 42, stratified ~70/15/15. Thresholds were selected on validation only; the test partition was not used for tuning.</p>
           <div className="mt-4 space-y-3">
             <ClassBar label="Training" negative={splits.train.negative} positive={splits.train.positive} />
@@ -88,12 +183,11 @@ export default function AboutSection() {
           </div>
         </Card>
 
-        <Card icon={ShieldAlert} title="Limitations">
+        <Card icon={ShieldAlert} title="Limitations" delay={180}>
           <ul className="list-disc space-y-1.5 pl-4 marker:text-ink-3">
             <li>Patient, examination and centre identifiers were unavailable: results are not patient-independent or cross-centre.</li>
             <li>Only {splits.test.positive} inhomogeneous test images; one training seed; no confidence intervals.</li>
             <li>Scores are uncalibrated; thresholds optimize F1, not a clinical cost.</li>
-            <li>MobileNetV3-Small is a post-hoc exploratory addition.</li>
             <li>Grad-CAM was verified technically; its anatomical validity was not assessed.</li>
             <li>Not clinically validated. Not for diagnosis.</li>
           </ul>
@@ -119,7 +213,7 @@ export default function AboutSection() {
           </ol>
         </Card>
 
-        <Card icon={FileText} title="Project resources">
+        <Card icon={FileText} title="Project resources" delay={90}>
           <ul className="space-y-2.5">
             <li>
               <ExternalAnchor href={REPOSITORY_URL}>Source repository (GitHub)</ExternalAnchor>

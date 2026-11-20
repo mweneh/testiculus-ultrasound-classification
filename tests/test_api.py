@@ -108,6 +108,37 @@ def test_unconfigured_model_is_unavailable(checkpoints):
         assert client.post("/predict?model_type=custom_cnn", files={"file": ("x", image_bytes())}).status_code == 503
 
 
+def test_public_profile_preserves_contract_and_hides_docs_and_private_files(checkpoints, tmp_path):
+    (tmp_path / "index.html").write_text("<html>research interface</html>")
+    app = api.create_app(checkpoints, device="cpu", public_mode=True, frontend_dir=tmp_path)
+    with TestClient(app) as client:
+        response = client.post("/predict?model_type=resnet18", files={"file": ("x", image_bytes())})
+        assert response.status_code == 200
+        assert response.json()["threshold"] == load_selected_threshold("resnet18")
+        assert 'no-store' in response.headers['cache-control']
+        for path in ('/docs', '/redoc', '/openapi.json', '/models/custom_cnn.pth', '/../private-models/x'):
+            assert client.get(path).status_code == 404
+        csp = client.get('/').headers['content-security-policy']
+        assert "frame-ancestors 'self' https://huggingface.co" in csp
+        assert client.get('/health').json()['status'] == 'ready'
+
+
+def test_public_profile_rejects_extra_multipart_parts_and_sanitizes_errors(checkpoints, monkeypatch):
+    app = api.create_app(checkpoints, device="cpu", public_mode=True)
+    with TestClient(app) as client:
+        url = '/explain?model_type=custom_cnn'
+        files = [('file', ('a.png', image_bytes())), ('extra', ('b.png', image_bytes()))]
+        assert client.post(url, files=files).status_code == 400
+        assert client.post(url, files={'file': ('a', image_bytes())}, data={'extra': 'value'}).status_code == 400
+        def fail(*args):
+            raise RuntimeError('SECRET or private filesystem path')
+        monkeypatch.setattr(api, 'explain_prediction', fail)
+        response = client.post(url, files={'file': ('a', image_bytes())})
+        assert response.status_code == 500
+        assert 'SECRET' not in response.text
+        assert response.json()['detail'].startswith('Explanation failed')
+
+
 def test_environment_configuration_loads_checkpoint(monkeypatch, checkpoints):
     monkeypatch.setenv("CUSTOM_CNN_CHECKPOINT", str(checkpoints["custom_cnn"]))
     monkeypatch.delenv("RESNET18_CHECKPOINT", raising=False)

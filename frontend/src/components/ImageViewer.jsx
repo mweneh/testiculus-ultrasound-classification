@@ -44,6 +44,9 @@ function Dropzone({ onFile, validating, inputRef }) {
         {validating ? 'Checking image…' : dragging ? 'Release to load the image' : 'Drop an ultrasound image here'}
       </p>
       <p className="mt-1.5 max-w-sm text-sm text-ink-2">PNG or JPEG, up to 5 MiB and 20 megapixels.</p>
+      <p className="mt-3 max-w-sm text-sm font-medium text-caution">
+        Upload only anonymized images you are authorized to share. Remove names, identifiers and embedded patient details before uploading.
+      </p>
       <button type="button" className="btn-ghost mt-5" onClick={() => inputRef.current?.click()} disabled={validating}>
         <Upload aria-hidden="true" className="h-4 w-4" />
         Choose a file

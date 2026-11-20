@@ -31,6 +31,29 @@ are unverified; the system is not clinically validated or suitable for diagnosis
 A browser [web interface](#web-interface) is served by the same FastAPI process:
 `docker compose up --build`, then open <http://127.0.0.1:8000>.
 
+**Public application: not deployed yet; no verified public HTTPS URL is available.**
+The Docker-based [Hugging Face deployment guide](deployment/huggingface/README.md)
+prepares a public inference interface with **private** checkpoint storage,
+independently of the unpublished GitHub model release. Account/hosting approval,
+the private-hosting rights review and live verification remain pending. Source
+publication on GitHub does not make model weights publicly downloadable.
+
+The Space profile binds to `0.0.0.0:7860` and serves the same React interface,
+`/health`, `/predict` and `/explain` on CPU. It verifies an immutable private Hub
+package against the recorded SHA-256 hashes before loading models. Set server-side
+secrets `MODEL_REPO_ID` and repository-read-only `HF_TOKEN`; variables are
+`DEPLOYMENT_MODE=space`, `PORT=7860`, `MODEL_REVISION=<full model-repo commit SHA>`
+and optional `MODEL_TYPES=resnet18,mobilenet_v3_small` to load two models.
+The guide covers the source-only Space bundle, private checkpoint installation,
+local port-7860 Docker commands, resource measurements, costs and anonymous
+examiner verification. Missing models remain disabled in the interface.
+
+Public mode bounds upload bodies/duration, concurrent work and request rate;
+interactive API documentation is disabled there. Upload only anonymized images
+you are authorized to share. **Research and educational use only. Not for clinical
+diagnosis.** No hosted inference, live private download or public URL is claimed
+from local container verification.
+
 ## System architecture
 
 Model development and deployed inference use separate paths. The test manifest
@@ -74,8 +97,9 @@ flowchart TB
 
 MobileNetV3-Small is a post-hoc exploratory extension to the original
 Custom CNN/ResNet18 comparison. Grad-CAM is available through the CLI and the
-`/explain` endpoint; archived verification uses synthetic inputs and supports
-no anatomical interpretation. The Docker service loads each configured model
+`/explain` endpoint. Earlier pipeline checks used synthetic inputs; the later
+local Space-profile checks also used one verified training image. Neither
+supports anatomical interpretation. The Docker service loads each configured model
 once per process, with weights supplied separately from the source/image.
 
 ## Web interface
@@ -293,6 +317,38 @@ masks are not model inputs. The labelled images are 300×300 pixels. Retain
 `homogeneous/793.png` for full-image classification even though its
 segmentation mask is empty. Exclude it only from work that requires a valid
 segmentation mask.
+
+### What the labels mean
+
+The label describes the ultrasound appearance of the testicular tissue
+(parenchyma), not a diagnosis.
+
+- **Texture.** A *homogeneous* testis shows an even, uniform echotexture: fine
+  echoes spread consistently across the tissue. An *inhomogeneous* testis shows
+  an uneven texture, with patchy or mottled regions that are darker or brighter
+  than their surroundings. This is the general sonographic meaning of the terms.
+  The dataset authors do not publish a visual definition or scoring criteria;
+  the labels are clinicians' judgements.
+- **Why it matters.** The dataset authors describe parenchymal inhomogeneity as
+  "an emerging biomarker for male infertility" (Morelli et al., ICIAP 2025,
+  Sec. 1), citing Spaggiari et al., "Testicular ultrasound inhomogeneity is an
+  informative parameter for fertility evaluation", *Asian Journal of Andrology*
+  22(3), 2020. It is a finding that informs a fertility assessment, not a
+  diagnosis of infertility or of any other condition. This project predicts the
+  appearance label only.
+- **Labels captured from video, stored as stills.** Clinicians assess
+  homogeneity during a real-time video examination, but only static screenshots
+  are saved, so a single image "may not always accurately reflect the actual
+  homogeneity characteristics of the tissue" (ICIAP 2025, Sec. 3). The authors
+  flagged 72 labelled images whose training loss behaved inconsistently; when
+  clinicians re-reviewed those cases from the still images alone, their
+  assessments did not agree with the original labels. Some labels are therefore
+  noisy, and some apparent model errors may be label errors that cannot be
+  identified from the images.
+
+This project uses the released labels as supplied: it does not filter, flip or
+re-annotate any image. Label noise limits the accuracy any image-only model can
+reach and is one reason the test results are reported as descriptive.
 
 ### Dataset attribution
 
@@ -912,7 +968,7 @@ equivalent and allow serving a subset of models.
 
 The Dockerfile has two stages. A pinned `node:24-alpine` stage runs `npm ci`
 and compiles the interface; only its static `dist/` files are copied into the
-unchanged Python serving stage, so Node.js and `node_modules` are not in the
+Python serving stage, so Node.js and `node_modules` are not in the
 final image.
 
 Build the CPU inference image:
@@ -922,6 +978,7 @@ docker build -t testiculus-inference:local .
 ```
 
 The build context allows only source code, serving requirements, Dockerfile,
+the trusted `release/manifest.json`,
 the two model-specific frozen threshold records, the interface sources and
 the two frozen records the interface bundles
 (`reports/mobilenet_exploratory_results.json`, `report/evidence.json`).
@@ -939,7 +996,7 @@ docker run --rm --read-only --tmpfs /tmp:rw,noexec,nosuid,size=64m \
   testiculus-inference:local
 ```
 
-The service runs as UID/GID 10001, with one worker and a `/health` Docker
+The current image runs as UID/GID 1000 (compatible with Docker Spaces), with one worker and a `/health` Docker
 health check. Mounted files must be readable by that UID. The default device
 is CPU; this image does not configure CUDA. Use the same health and prediction
 requests shown above.
@@ -959,10 +1016,11 @@ docker run --rm --read-only --tmpfs /tmp:rw,noexec,nosuid,size=64m \
   testiculus-inference:local
 ```
 
-The saved three-model container check used a cached dependency build. An
-uncached PyTorch wheel download timed out; a clean-network build is not claimed
-verified. The new path mapping above is consistent with the packaged filenames
-and existing API environment variables; it was not a new container execution.
+The earlier saved three-model check used cached dependencies after a PyTorch
+download timed out. Deployment preparation subsequently built the Python stage
+with freshly downloaded dependencies and verified the flat package mapping in
+local containers. Base images and frontend dependencies were cached; a fully
+uncached build and a live Hugging Face build remain unverified.
 
 Reproduce the container acceptance checks with the downloaded trained weights:
 
@@ -1111,6 +1169,15 @@ Grad-CAM checks for all three trained models using synthetic pixels only; a
 ResNet18-only container also passed, with other models rejected as unavailable.
 The review did not run an optimizer or held-out inference. See
 [integration verification](report/frontend_integration_verification.json).
+
+The subsequent deployment-preparation suite passed **201 backend tests**, with
+both synthetic optimizer tests excluded, plus **34 frontend tests** and the
+**four report checks**. The local Space profile passed genuine three-model
+prediction/Grad-CAM checks, desktop/mobile browser checks and upload/rate-limit
+checks. All checkpoints, frozen scientific records and the report PDF remain
+unchanged. These local checks do not establish public hosting; see the
+[deployment record](deployment/huggingface/verification.json) for measurements,
+source hashes, cache scope and pending live checks.
 
 Release preparation adds **18 passing tests** in `tests/test_release_assets.py`,
 including strict loading of the available final checkpoints, deterministic

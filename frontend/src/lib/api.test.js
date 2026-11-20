@@ -50,6 +50,8 @@ describe('predict', () => {
   });
 
   it.each([
+    [408, 'Upload timed out', /upload timed out/],
+    [429, 'Research demo rate limit reached', /Wait one minute/],
     [413, 'Image exceeds the 5 MiB upload limit', /server limits/],
     [415, 'Only PNG and JPEG images are supported', /Only PNG and JPEG/],
     [503, 'Model mobilenet_v3_small is not configured', /not loaded on the server/],

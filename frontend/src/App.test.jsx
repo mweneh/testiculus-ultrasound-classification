@@ -79,6 +79,7 @@ describe('TesticulUS interface', () => {
     await setup();
     expect(screen.getAllByText('Research and educational use only. Not for clinical diagnosis.').length).toBeGreaterThan(0);
     expect(screen.getByText(/3 of 3/)).toBeInTheDocument();
+    expect(screen.getByText(/Upload only anonymized images you are authorized to share/)).toBeInTheDocument();
   });
 
   it('previews a selected image without uploading it', async () => {
@@ -134,7 +135,7 @@ describe('TesticulUS interface', () => {
     await user.click(screen.getByRole('radio', { name: /Custom CNN/ }));
     vi.mocked(fetch).mockImplementationOnce(async () => json(503, { detail: 'Model custom_cnn is not configured' }));
     await user.click(runButton());
-    expect(await screen.findByText('This model is not loaded on the server, so it cannot run.')).toBeInTheDocument();
+    expect(await screen.findByText('This model is not loaded on the server, or the shared research demo is busy. Retry shortly.')).toBeInTheDocument();
     expect(screen.getByText(/Model custom_cnn is not configured/)).toBeInTheDocument();
     expect(screen.queryByTestId('predicted-class')).toBeNull();
     await waitFor(() => expect(calls.filter(({ url }) => url === '/health').length).toBeGreaterThan(1));
@@ -178,6 +179,14 @@ describe('TesticulUS interface', () => {
     expect(modelCalls(calls).map(({ url }) => url)).toEqual(['/predict?model_type=mobilenet_v3_small', '/explain?model_type=mobilenet_v3_small']);
   });
 
+  it('explains what the class labels mean and their limits', async () => {
+    await setup();
+    const about = screen.getByRole('region', { name: /What this prototype is/ });
+    expect(within(about).getByRole('heading', { name: 'What the labels mean' })).toBeInTheDocument();
+    expect(within(about).getByText(/emerging biomarker for male\s+infertility/)).toBeInTheDocument();
+    expect(within(about).getByText(/only still screenshots are kept/)).toBeInTheDocument();
+  });
+
   it('clears the image and its results', async () => {
     const { user } = await setup();
     await loadImage(user);
@@ -194,7 +203,7 @@ describe('TesticulUS interface', () => {
     const { user } = await setup();
     const evaluation = screen.getByRole('region', { name: /How the models performed/ });
     expect(within(evaluation).getByText('not the image you upload')).toBeInTheDocument();
-    expect(within(evaluation).getAllByText('Post-hoc exploratory').length).toBeGreaterThan(0);
+    expect(within(evaluation).getAllByText('Exploratory').length).toBeGreaterThan(0);
     await user.click(within(evaluation).getByRole('button', { name: /Table/ }));
     const table = within(evaluation).getByRole('table');
     expect(within(table).getByText('0.7473')).toBeInTheDocument();
