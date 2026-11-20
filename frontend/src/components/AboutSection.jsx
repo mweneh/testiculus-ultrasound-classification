@@ -1,4 +1,4 @@
-import { BookOpen, Database, ExternalLink, FileText, ShieldAlert, Split } from 'lucide-react';
+import { BookOpen, Database, ExternalLink, FileText, HeartPulse, ScanSearch, ShieldAlert, Split, Video, Waves } from 'lucide-react';
 import { comparison } from '../lib/records.js';
 import { grouped } from '../lib/format.js';
 import { Reveal, SectionHeading } from './ui.jsx';
@@ -29,6 +29,60 @@ function ClassBar({ negative, positive, label }) {
         <span>{negative} homogeneous</span>
         <span>{positive} inhomogeneous</span>
       </div>
+    </div>
+  );
+}
+
+/** Deterministic pseudo-random jitter in [0, 1) so the schematic renders identically every time. */
+function jitter(index) {
+  const value = Math.sin(index * 12.9898) * 43758.5453;
+  return value - Math.floor(value);
+}
+
+const BLOBS = [
+  { x: 4, y: 5, r: 3.2, delta: -0.24 },
+  { x: 11, y: 4, r: 2.6, delta: 0.3 },
+  { x: 9, y: 11, r: 3.6, delta: -0.2 },
+  { x: 3, y: 12, r: 2.2, delta: 0.26 },
+];
+
+/** Abstract schematic of an even versus a patchy texture; not an ultrasound image. */
+function TextureSwatch({ patchy, label }) {
+  const size = 14;
+  const cells = Array.from({ length: size * size }, (_, index) => {
+    const x = index % size;
+    const y = Math.floor(index / size);
+    let level = 0.42 + (jitter(index) - 0.5) * 0.12;
+    if (patchy) {
+      for (const blob of BLOBS) {
+        const distance = Math.hypot(x - blob.x, y - blob.y);
+        level += blob.delta * Math.exp(-(distance * distance) / (2 * blob.r * blob.r)) * 1.6;
+      }
+      level += (jitter(index + 999) - 0.5) * 0.18;
+    }
+    return { x, y, level: Math.min(0.95, Math.max(0.04, level)) };
+  });
+  return (
+    <figure className="flex flex-col items-center gap-1.5">
+      <svg viewBox={`0 0 ${size} ${size}`} className="h-16 w-16 rounded-lg ring-1 ring-lab-line" aria-hidden="true">
+        <rect width={size} height={size} fill="#04080f" />
+        {cells.map((cell) => (
+          <rect key={`${cell.x}-${cell.y}`} x={cell.x} y={cell.y} width="1" height="1" fill="#e8eef6" fillOpacity={cell.level} />
+        ))}
+      </svg>
+      <figcaption className="text-[11.5px] text-ink-2">{label}</figcaption>
+    </figure>
+  );
+}
+
+function LabelPoint({ icon: Icon, title, children }) {
+  return (
+    <div>
+      <h4 className="flex items-center gap-2 text-[13.5px] font-semibold text-ink-1">
+        <Icon aria-hidden="true" className="h-3.5 w-3.5 text-accent" />
+        {title}
+      </h4>
+      <div className="mt-2 space-y-2">{children}</div>
     </div>
   );
 }
@@ -67,6 +121,48 @@ export default function AboutSection() {
       </SectionHeading>
 
       <div className="mt-8 grid gap-4 lg:grid-cols-3">
+        <Card icon={ScanSearch} title="What the labels mean" className="lg:col-span-3">
+          <div className="grid gap-6 md:grid-cols-3">
+            <LabelPoint icon={Waves} title="Tissue texture">
+              <p>
+                <strong className="font-semibold text-ink-1">Homogeneous</strong>: an even, uniform echotexture, with fine echoes
+                spread consistently across the testicular tissue.{' '}
+                <strong className="font-semibold text-ink-1">Inhomogeneous</strong>: an uneven texture, with patchy or mottled
+                regions darker or brighter than their surroundings.
+              </p>
+              <div className="flex gap-5 pt-1">
+                <TextureSwatch label="Even" />
+                <TextureSwatch patchy label="Patchy" />
+              </div>
+              <p className="text-[12px] text-ink-3">
+                Schematic only, not ultrasound images. The dataset authors publish no visual criteria; the labels are
+                clinicians&apos; judgements.
+              </p>
+            </LabelPoint>
+            <LabelPoint icon={HeartPulse} title="Why it matters">
+              <p>
+                The dataset authors describe parenchymal inhomogeneity as &ldquo;an emerging biomarker for male
+                infertility&rdquo; (Morelli et al., ICIAP 2025), citing Spaggiari et al., <em>Asian Journal of Andrology</em>,
+                2020.
+              </p>
+              <p>
+                It is a finding that informs a fertility assessment, not a diagnosis of infertility or any other condition.
+                This tool predicts the appearance label only.
+              </p>
+            </LabelPoint>
+            <LabelPoint icon={Video} title="Judged on video, saved as stills">
+              <p>
+                Clinicians assess homogeneity during a live video examination, but only still screenshots are kept, and a
+                single frame may not show what they saw.
+              </p>
+              <p>
+                When the authors had clinicians re-review 72 suspicious images from the stills alone, the new assessments did
+                not agree with the original labels. Some labels are noisy, so some apparent model errors may be label errors.
+              </p>
+            </LabelPoint>
+          </div>
+        </Card>
+
         <Card icon={Database} title="Dataset: TesticulUS-Real">
           <p>
             {grouped(dataset.total)} labelled grayscale images: {grouped(dataset.negative)} homogeneous (class 0) and{' '}

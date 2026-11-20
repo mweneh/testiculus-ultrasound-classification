@@ -179,6 +179,14 @@ describe('TesticulUS interface', () => {
     expect(modelCalls(calls).map(({ url }) => url)).toEqual(['/predict?model_type=mobilenet_v3_small', '/explain?model_type=mobilenet_v3_small']);
   });
 
+  it('explains what the class labels mean and their limits', async () => {
+    await setup();
+    const about = screen.getByRole('region', { name: /What this prototype is/ });
+    expect(within(about).getByRole('heading', { name: 'What the labels mean' })).toBeInTheDocument();
+    expect(within(about).getByText(/emerging biomarker for male\s+infertility/)).toBeInTheDocument();
+    expect(within(about).getByText(/only still screenshots are kept/)).toBeInTheDocument();
+  });
+
   it('clears the image and its results', async () => {
     const { user } = await setup();
     await loadImage(user);
