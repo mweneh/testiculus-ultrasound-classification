@@ -318,6 +318,38 @@ masks are not model inputs. The labelled images are 300×300 pixels. Retain
 segmentation mask is empty. Exclude it only from work that requires a valid
 segmentation mask.
 
+### What the labels mean
+
+The label describes the ultrasound appearance of the testicular tissue
+(parenchyma), not a diagnosis.
+
+- **Texture.** A *homogeneous* testis shows an even, uniform echotexture: fine
+  echoes spread consistently across the tissue. An *inhomogeneous* testis shows
+  an uneven texture, with patchy or mottled regions that are darker or brighter
+  than their surroundings. This is the general sonographic meaning of the terms.
+  The dataset authors do not publish a visual definition or scoring criteria;
+  the labels are clinicians' judgements.
+- **Why it matters.** The dataset authors describe parenchymal inhomogeneity as
+  "an emerging biomarker for male infertility" (Morelli et al., ICIAP 2025,
+  Sec. 1), citing Spaggiari et al., "Testicular ultrasound inhomogeneity is an
+  informative parameter for fertility evaluation", *Asian Journal of Andrology*
+  22(3), 2020. It is a finding that informs a fertility assessment, not a
+  diagnosis of infertility or of any other condition. This project predicts the
+  appearance label only.
+- **Labels captured from video, stored as stills.** Clinicians assess
+  homogeneity during a real-time video examination, but only static screenshots
+  are saved, so a single image "may not always accurately reflect the actual
+  homogeneity characteristics of the tissue" (ICIAP 2025, Sec. 3). The authors
+  flagged 72 labelled images whose training loss behaved inconsistently; when
+  clinicians re-reviewed those cases from the still images alone, their
+  assessments did not agree with the original labels. Some labels are therefore
+  noisy, and some apparent model errors may be label errors that cannot be
+  identified from the images.
+
+This project uses the released labels as supplied: it does not filter, flip or
+re-annotate any image. Label noise limits the accuracy any image-only model can
+reach and is one reason the test results are reported as descriptive.
+
 ### Dataset attribution
 
 TesticulUS is credited to Morelli et al. and the dataset contributors.
