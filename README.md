@@ -1136,13 +1136,14 @@ temporary models only) had **182 passed** with the same single Starlette
 deprecation warning, and the four report tests passed. That count is the 172
 previously existing tests plus these 10.
 
-The interface has its own **32 Vitest tests** (`cd frontend && npm test`) with
+The interface has its own **35 Vitest tests** (`cd frontend && npm test`) with
 a mocked API: upload validation and limits, API contract parsing and error
-mapping, the frozen-record values shown in the comparison, no upload before
-**Run analysis**, unavailable checkpoints, an unreachable API, result
-rendering as a model score, 503/400 handling, stale results after a model
-change, Grad-CAM gating and overlay toggle, image removal, and labelling of
-historical versus live results.
+mapping (including request timeouts and rate limits), the frozen-record values
+shown in the comparison, no upload before **Run analysis**, unavailable
+checkpoints, an unreachable API, result rendering as a model score, 503/400
+handling, stale results after a model change, Grad-CAM gating and overlay
+toggle, image removal, labelling of historical versus live results, and the
+explanation of what the class labels mean.
 
 The web interface was also checked end to end in headless Chrome against the
 two-stage Docker image (`docker compose up`, all three release-package
@@ -1178,6 +1179,21 @@ checks. All checkpoints, frozen scientific records and the report PDF remain
 unchanged. These local checks do not establish public hosting; see the
 [deployment record](deployment/huggingface/verification.json) for measurements,
 source hashes, cache scope and pending live checks.
+
+On 20 November 2026, after the interface copy and motion updates, the
+class-label explanation and the demo-image selection script were merged into
+`main`, the complete `python -m pytest -q` run had **211 passed** with no
+deselections and the same single Starlette deprecation warning. That is the 201
+deployment-preparation tests, both synthetic-training tests (fresh temporary
+models only), the four report checks and four new tests for
+`src/demo_images.py`. The **35 frontend tests** and the production build also
+passed. Preparing the local, git-ignored demo images with
+`python -m src.demo_images --checkpoint-dir artifacts/releases/models-v1.0.0`
+re-scored seven held-out **test-partition** images with the release
+checkpoints, to confirm that they reproduce the saved test predictions shown in
+their answer key. That is display verification only: it selected nothing from
+the new scores and changed no checkpoint, threshold, prediction file or
+reported metric.
 
 Release preparation adds **18 passing tests** in `tests/test_release_assets.py`,
 including strict loading of the available final checkpoints, deterministic

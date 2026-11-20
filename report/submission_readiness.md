@@ -52,6 +52,16 @@ all-model and ResNet18-only configurations. See
 The Docker build reused cached dependencies; the earlier uncached-download
 timeout remains a reproducibility limit.
 
+**Later verification (20 November 2026).** After the deployment branch,
+interface copy and motion updates, class-label explanation and demo-image
+selection script were merged into `main`, the full `python -m pytest -q` run
+had 211 passed (no deselections; includes both synthetic-training tests, the
+four report checks and four demo-image tests), and 35 frontend tests and the
+production build passed. Demo-image preparation re-scored seven held-out
+test-partition images with the release checkpoints solely to confirm they match
+the saved test predictions; no checkpoint, threshold or reported metric changed.
+The counts above remain the records of those earlier runs.
+
 ## Source synchronization and release commands
 
 **The source push was authorized and verified. No checkpoint upload, model

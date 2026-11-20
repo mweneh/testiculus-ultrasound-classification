@@ -240,6 +240,15 @@ remaining owner actions.
   unconfigured models returning 503. Dependency layers were cached; no fresh
   network build is claimed. Full results are in
   `frontend_integration_verification.json`.
+- Later verification (20 November 2026), after merging the deployment branch,
+  interface copy/motion updates, class-label explanation and demo-image script
+  into `main`: full `python -m pytest -q` had 211 passed with no deselections
+  (both synthetic-training tests, four report checks and four demo-image tests
+  included); 35 frontend tests and the production build passed. Demo-image
+  preparation re-scored seven held-out test-partition images with the release
+  checkpoints only to confirm the saved test predictions; no checkpoint,
+  threshold or reported metric changed. The 176/32 counts above are the records
+  of the earlier integration run.
 - The current integration opened no ultrasound pixels and ran no optimizer,
   held-out inference or scientific evaluation. Earlier frontend work separately
   documented one training-image demonstration, with private screenshots under
