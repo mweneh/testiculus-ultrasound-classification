@@ -195,7 +195,7 @@ describe('TesticulUS interface', () => {
     const { user } = await setup();
     const evaluation = screen.getByRole('region', { name: /How the models performed/ });
     expect(within(evaluation).getByText('not the image you upload')).toBeInTheDocument();
-    expect(within(evaluation).getAllByText('Post-hoc exploratory').length).toBeGreaterThan(0);
+    expect(within(evaluation).getAllByText('Exploratory').length).toBeGreaterThan(0);
     await user.click(within(evaluation).getByRole('button', { name: /Table/ }));
     const table = within(evaluation).getByRole('table');
     expect(within(table).getByText('0.7473')).toBeInTheDocument();

@@ -61,8 +61,7 @@ export default function AboutSection() {
     <section id="about" aria-labelledby="about-title" className="scroll-mt-28">
       <SectionHeading id="about-title" eyebrow="About the research" title="What this prototype is, and what it is not">
         <p>
-          An MSc Applied Machine Learning capstone (DSA 8401, Strathmore University) comparing image-level classifiers for
-          testicular ultrasound appearance. The target is the released homogeneous / inhomogeneous image label, not a patient
+          A comparison of image-level classifiers for testicular ultrasound appearance. The target is the released homogeneous / inhomogeneous image label, not a patient
           diagnosis, infertility or malignancy.
         </p>
       </SectionHeading>
@@ -93,7 +92,6 @@ export default function AboutSection() {
             <li>Patient, examination and centre identifiers were unavailable: results are not patient-independent or cross-centre.</li>
             <li>Only {splits.test.positive} inhomogeneous test images; one training seed; no confidence intervals.</li>
             <li>Scores are uncalibrated; thresholds optimize F1, not a clinical cost.</li>
-            <li>MobileNetV3-Small is a post-hoc exploratory addition.</li>
             <li>Grad-CAM was verified technically; its anatomical validity was not assessed.</li>
             <li>Not clinically validated. Not for diagnosis.</li>
           </ul>

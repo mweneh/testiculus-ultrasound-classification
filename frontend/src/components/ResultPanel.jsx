@@ -67,7 +67,7 @@ export function ResultBody({ result, stale, completedAt, roundTripMs }) {
           <SeriesSwatch series={model.series} />
           {model.name}
         </span>
-        {model.exploratory && <ExploratoryBadge compact />}
+        {model.exploratory && <ExploratoryBadge />}
       </div>
 
       <p className="eyebrow mt-5">Predicted image label</p>

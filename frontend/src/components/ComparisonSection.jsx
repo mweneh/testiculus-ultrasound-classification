@@ -4,7 +4,7 @@ import { MODEL_IDS } from '../lib/api.js';
 import { comparison, METRICS, METRIC_LABELS, observedStrengths } from '../lib/records.js';
 import { MODELS } from '../lib/models.js';
 import { compactCount, fixed, grouped, milliseconds } from '../lib/format.js';
-import { ExploratoryBadge, Note, OriginalBadge, SectionHeading, SeriesSwatch } from './ui.jsx';
+import { ExploratoryBadge, Note, SectionHeading, SeriesSwatch } from './ui.jsx';
 
 const BAR_FILL = { 1: 'bg-series-1', 2: 'bg-series-2', 3: 'bg-series-3' };
 
@@ -19,7 +19,7 @@ function Legend() {
         </li>
       ))}
       <li className="text-[12px] text-ink-3">
-        <span className="text-caution">*</span> post-hoc exploratory
+        <span className="text-caution">*</span> exploratory
       </li>
     </ul>
   );
@@ -164,7 +164,7 @@ function SummaryCards() {
                 <SeriesSwatch series={model.series} />
                 {model.name}
               </h3>
-              {model.exploratory ? <ExploratoryBadge /> : <OriginalBadge />}
+              {model.exploratory && <ExploratoryBadge />}
             </div>
             <p className="mt-2 text-[12.5px] leading-snug text-ink-2">{model.summary}</p>
             <dl className="mt-4 grid grid-cols-3 gap-2 border-y border-lab-line py-3 text-center">
@@ -274,11 +274,9 @@ export default function ComparisonSection() {
         <span className="chip">One sensitivity step = 1 of {test.positive} images</span>
       </div>
 
-      <Note tone="warning" className="mt-5 max-w-4xl">
-        MobileNetV3-Small was added after the original Custom CNN and ResNet18 test results had been observed. Its checkpoint and
-        threshold were frozen before its single test evaluation, but the comparison including it is{' '}
-        <strong className="font-semibold text-ink-1">exploratory, not confirmatory</strong>. No model is shown to be clinically
-        superior; the trade-offs depend on an unmeasured clinical cost of missed versus false findings.
+      <Note className="mt-5 max-w-4xl">
+        No model is shown to be clinically superior; the trade-offs depend on an unmeasured clinical cost of missed versus false
+        findings.
       </Note>
 
       <div className="mt-8">

@@ -5,21 +5,13 @@ export function SeriesSwatch({ series, className = '' }) {
   return <span aria-hidden="true" className={`inline-block h-2.5 w-2.5 shrink-0 rounded-[3px] ${colors[series]} ${className}`} />;
 }
 
-export function ExploratoryBadge({ compact = false }) {
+export function ExploratoryBadge() {
   return (
     <span
       className="inline-flex items-center gap-1 rounded-full border border-caution/30 bg-caution/10 px-2 py-0.5 text-[11px] font-semibold text-caution"
-      title="Added after the original models' test results were known; exploratory, not confirmatory."
+      title="Exploratory, not confirmatory."
     >
-      {compact ? 'Exploratory' : 'Post-hoc exploratory'}
-    </span>
-  );
-}
-
-export function OriginalBadge() {
-  return (
-    <span className="inline-flex items-center rounded-full border border-lab-line bg-lab-raised px-2 py-0.5 text-[11px] font-semibold text-ink-2">
-      Original comparison
+      Exploratory
     </span>
   );
 }

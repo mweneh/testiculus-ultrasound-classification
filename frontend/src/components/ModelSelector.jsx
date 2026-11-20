@@ -1,7 +1,7 @@
 import { CircleCheck, CircleSlash } from 'lucide-react';
 import { MODELS } from '../lib/models.js';
 import { compactCount } from '../lib/format.js';
-import { ExploratoryBadge, OriginalBadge, SeriesSwatch } from './ui.jsx';
+import { ExploratoryBadge, SeriesSwatch } from './ui.jsx';
 
 function availability(health, id) {
   if (health.phase === 'checking') return { ready: false, label: 'Checking availability…' };
@@ -54,7 +54,7 @@ export default function ModelSelector({ health, selected, onSelect, disabled }) 
                 <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <SeriesSwatch series={model.series} />
                   <span className="text-sm font-semibold text-ink-1">{model.name}</span>
-                  {model.exploratory ? <ExploratoryBadge compact /> : <OriginalBadge />}
+                  {model.exploratory && <ExploratoryBadge />}
                 </span>
                 <span className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 text-[12px] leading-snug">
                   <span className="text-ink-2">

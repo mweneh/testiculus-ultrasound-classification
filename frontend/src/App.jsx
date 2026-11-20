@@ -212,7 +212,7 @@ export default function App({ validate = validateImageFile }) {
 
       <footer className="border-t border-lab-line">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-[12.5px] text-ink-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          <p>TesticulUS research prototype · DSA 8401 Applied Machine Learning capstone · Strathmore University</p>
+          <p>TesticulUS research prototype</p>
           <p className="font-medium text-caution">Research and educational use only. Not for clinical diagnosis.</p>
         </div>
       </footer>
