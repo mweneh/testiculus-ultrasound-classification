@@ -6,6 +6,7 @@ import ResultPanel from './components/ResultPanel.jsx';
 import GradCamPanel from './components/GradCamPanel.jsx';
 import ComparisonSection from './components/ComparisonSection.jsx';
 import AboutSection from './components/AboutSection.jsx';
+import HeroBackdrop from './components/HeroBackdrop.jsx';
 import { useHealth } from './hooks/useHealth.js';
 import { ApiError, explain as requestExplanation, predict as requestPrediction } from './lib/api.js';
 import { MODEL_BY_ID } from './lib/models.js';
@@ -141,7 +142,8 @@ export default function App({ validate = validateImageFile }) {
   const runningModel = analysis.phase === 'running' ? MODEL_BY_ID[analysis.model]?.name : MODEL_BY_ID[selectedModel]?.name;
 
   return (
-    <div id="top" className="min-h-screen">
+    <div id="top" className="relative isolate min-h-screen">
+      <HeroBackdrop />
       <a href="#analyse" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-accent focus:px-4 focus:py-2 focus:text-accent-ink">
         Skip to analysis
       </a>
@@ -149,7 +151,7 @@ export default function App({ validate = validateImageFile }) {
 
       <main className="mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8">
         <section id="analyse" aria-labelledby="analyse-title" className="scroll-mt-28 pt-6 sm:pt-8">
-          <div className="max-w-3xl">
+          <div className="max-w-3xl animate-fade-up">
             <p className="eyebrow">Image-level classification · frozen research models</p>
             <h1 id="analyse-title" className="mt-2 text-[26px] font-semibold leading-tight tracking-tight text-ink-1 sm:text-[32px]">
               Classify testicular ultrasound appearance
@@ -160,7 +162,7 @@ export default function App({ validate = validateImageFile }) {
             </p>
           </div>
 
-          <div className="mt-6 grid gap-5 lg:grid-cols-12">
+          <div className="mt-6 grid animate-fade-up gap-5 [animation-delay:120ms] lg:grid-cols-12">
             <div className="min-w-0 lg:col-span-7 xl:col-span-8">
               <div className="lg:sticky lg:top-32">
                 <ImageViewer
@@ -204,9 +206,9 @@ export default function App({ validate = validateImageFile }) {
           </div>
         </section>
 
-        <div className="my-16 h-px bg-lab-line sm:my-20" />
+        <div className="divider my-16 sm:my-20" />
         <ComparisonSection />
-        <div className="my-16 h-px bg-lab-line sm:my-20" />
+        <div className="divider my-16 sm:my-20" />
         <AboutSection />
       </main>
 

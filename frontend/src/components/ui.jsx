@@ -1,4 +1,5 @@
 import { Info, TriangleAlert } from 'lucide-react';
+import { useReveal } from '../hooks/useReveal.js';
 
 export function SeriesSwatch({ series, className = '' }) {
   const colors = { 1: 'bg-series-1', 2: 'bg-series-2', 3: 'bg-series-3' };
@@ -59,5 +60,22 @@ export function SectionHeading({ id, eyebrow, title, children }) {
       </h2>
       {children && <div className="mt-3 text-[15px] leading-relaxed text-ink-2">{children}</div>}
     </div>
+  );
+}
+
+/** Fades its content up once it scrolls into view. */
+export function Reveal({ as: Tag = 'div', delay = 0, className = '', children, ...rest }) {
+  const [ref, revealed] = useReveal();
+  return (
+    <Tag
+      ref={ref}
+      className={`transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.2,0.7,0.2,1)] ${
+        revealed ? 'translate-y-0 opacity-100' : 'translate-y-3 opacity-0'
+      } ${className}`}
+      style={revealed && delay ? { transitionDelay: `${delay}ms` } : undefined}
+      {...rest}
+    >
+      {children}
+    </Tag>
   );
 }

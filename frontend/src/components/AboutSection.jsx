@@ -1,7 +1,7 @@
 import { BookOpen, Database, ExternalLink, FileText, ShieldAlert, Split } from 'lucide-react';
 import { comparison } from '../lib/records.js';
 import { grouped } from '../lib/format.js';
-import { SectionHeading } from './ui.jsx';
+import { Reveal, SectionHeading } from './ui.jsx';
 
 export const REPOSITORY_URL = 'https://github.com/mweneh/testiculus-ultrasound-classification';
 export const REPORT_URL = `${REPOSITORY_URL}/blob/main/report/capstone_report.pdf`;
@@ -33,15 +33,15 @@ function ClassBar({ negative, positive, label }) {
   );
 }
 
-function Card({ icon: Icon, title, children, className = '' }) {
+function Card({ icon: Icon, title, children, className = '', delay = 0 }) {
   return (
-    <article className={`panel p-5 ${className}`}>
+    <Reveal as="article" delay={delay} className={`panel p-5 ${className}`}>
       <h3 className="flex items-center gap-2 text-[15px] font-semibold text-ink-1">
         <Icon aria-hidden="true" className="h-4 w-4 text-accent" />
         {title}
       </h3>
       <div className="mt-3 text-[13.5px] leading-relaxed text-ink-2">{children}</div>
-    </article>
+    </Reveal>
   );
 }
 
@@ -78,7 +78,7 @@ export default function AboutSection() {
           </div>
         </Card>
 
-        <Card icon={Split} title="Image-level split">
+        <Card icon={Split} title="Image-level split" delay={90}>
           <p>Fixed seed 42, stratified ~70/15/15. Thresholds were selected on validation only; the test partition was not used for tuning.</p>
           <div className="mt-4 space-y-3">
             <ClassBar label="Training" negative={splits.train.negative} positive={splits.train.positive} />
@@ -87,7 +87,7 @@ export default function AboutSection() {
           </div>
         </Card>
 
-        <Card icon={ShieldAlert} title="Limitations">
+        <Card icon={ShieldAlert} title="Limitations" delay={180}>
           <ul className="list-disc space-y-1.5 pl-4 marker:text-ink-3">
             <li>Patient, examination and centre identifiers were unavailable: results are not patient-independent or cross-centre.</li>
             <li>Only {splits.test.positive} inhomogeneous test images; one training seed; no confidence intervals.</li>
@@ -117,7 +117,7 @@ export default function AboutSection() {
           </ol>
         </Card>
 
-        <Card icon={FileText} title="Project resources">
+        <Card icon={FileText} title="Project resources" delay={90}>
           <ul className="space-y-2.5">
             <li>
               <ExternalAnchor href={REPOSITORY_URL}>Source repository (GitHub)</ExternalAnchor>

@@ -12,7 +12,7 @@ function ScoreMeter({ score, threshold }) {
       <div className="relative h-10">
         <div className="absolute inset-x-0 top-5 h-2.5 overflow-hidden rounded-full bg-lab-stage ring-1 ring-lab-line">
           <div className="absolute inset-y-0 right-0 bg-ink-3/15" style={{ left: thresholdPct }} aria-hidden="true" />
-          <div className="relative h-full rounded-full bg-accent transition-[width] duration-700 ease-out" style={{ width: scorePct }} />
+          <div className="relative h-full origin-left animate-grow-x rounded-full bg-accent transition-[width] duration-700 ease-out" style={{ width: scorePct }} />
         </div>
         <div className="absolute top-0 flex -translate-x-1/2 flex-col items-center" style={{ left: thresholdPct }} aria-hidden="true">
           <span className="whitespace-nowrap font-mono text-[10.5px] text-ink-2">threshold</span>
@@ -71,7 +71,7 @@ export function ResultBody({ result, stale, completedAt, roundTripMs }) {
       </div>
 
       <p className="eyebrow mt-5">Predicted image label</p>
-      <p className="mt-1 text-[34px] font-semibold leading-tight tracking-tight text-ink-1" data-testid="predicted-class">
+      <p className="mt-1 animate-fade-up text-[34px] font-semibold leading-tight tracking-tight text-ink-1" data-testid="predicted-class">
         {CLASS_LABEL[result.className]}
       </p>
       <p className="mt-0.5 text-[13px] text-ink-2">
